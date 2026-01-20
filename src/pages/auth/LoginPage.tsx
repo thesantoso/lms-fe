@@ -23,10 +23,11 @@ const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      const from = (location.state as any)?.from?.pathname || '/admin';
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/admin';
       navigate(from, { replace: true });
-    } catch (err: any) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message || 'Failed to login. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }

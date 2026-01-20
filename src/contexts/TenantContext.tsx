@@ -69,6 +69,7 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTenant = () => {
   const context = useContext(TenantContext);
   if (context === undefined) {
