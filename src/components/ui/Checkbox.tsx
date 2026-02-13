@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
-import { cn } from '@/lib/utils';
 import { Check } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils';
 
 export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
@@ -12,28 +12,36 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const checkboxId = id || (label ? `checkbox-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined);
 
     return (
-      <div className="flex items-center gap-2">
-        <div className="relative flex items-center">
+      <div className="inline-flex items-center gap-2">
+        <div className="relative flex items-center justify-center">
           <input
             type="checkbox"
             id={checkboxId}
             ref={ref}
             className={cn(
-              "peer h-4 w-4 shrink-0 rounded border border-neutral-300 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50 appearance-none checked:bg-primary-600 checked:border-primary-600 transition-colors cursor-pointer",
+              // Base styles
+              "peer h-5 w-5 appearance-none rounded border border-neutral-300 bg-white cursor-pointer shrink-0 transition-all",
+              // Interactive states
+              "hover:border-blue-500 hover:bg-neutral-50",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+              // Checked state
+              "checked:bg-[#2563EB] checked:border-[#2563EB] checked:hover:bg-blue-700",
+              // Disabled state
+              "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-neutral-100",
               className
             )}
             {...props}
           />
           <Check 
-            size={10} 
             weight="bold" 
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" 
+            className="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 transition-opacity peer-checked:opacity-100" 
           />
         </div>
+        
         {label && (
           <label
             htmlFor={checkboxId}
-            className="text-sm text-neutral-600 cursor-pointer select-none font-medium"
+            className="text-sm text-neutral-600 cursor-pointer select-none font-medium hover:text-neutral-900 transition-colors"
           >
             {label}
           </label>

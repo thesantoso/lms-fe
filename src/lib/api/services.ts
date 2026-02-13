@@ -83,8 +83,12 @@ export const studentApi = {
   create: (data: Omit<Student, 'id'>) =>
     apiClient.post<Student>('/students', data),
   
-  update: (id: string, data: Partial<Student>) =>
-    apiClient.put<Student>(`/students/${id}`, data),
+  update: (id: string, data: Partial<Student>) => {
+    if (USE_MOCK_API) {
+      return mockApi.updateStudent(id, data);
+    }
+    return apiClient.put<Student>(`/students/${id}`, data);
+  },
   
   delete: (id: string) =>
     apiClient.delete(`/students/${id}`),

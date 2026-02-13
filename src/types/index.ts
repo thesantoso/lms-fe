@@ -37,6 +37,13 @@ export interface Student {
   id: string;
   schoolId: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  placeOfBirth?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female';
+  religion?: string;
+  photo?: string;
   email: string;
   enrollmentDate: string;
   status: 'active' | 'inactive' | 'graduated';

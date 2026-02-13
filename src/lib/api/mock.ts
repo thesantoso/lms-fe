@@ -136,8 +136,71 @@ export const mockStudents: Student[] = [
     name: 'Alice Johnson',
     email: 'alice.j@example.com',
     enrollmentDate: '2023-09-01T00:00:00Z',
-    status: 'active',
+    status: 'inactive',
     courses: ['course-2', 'course-3'],
+  },
+  {
+    id: 'student-4',
+    schoolId: 'school-1',
+    name: 'Michael Brown',
+    email: 'michael.b@example.com',
+    enrollmentDate: '2022-09-01T00:00:00Z',
+    status: 'graduated',
+    courses: [],
+  },
+  {
+    id: 'student-5',
+    schoolId: 'school-1',
+    name: 'Emily Davis',
+    email: 'emily.d@example.com',
+    enrollmentDate: '2024-09-01T00:00:00Z',
+    status: 'active',
+    courses: ['course-1'],
+  },
+  {
+    id: 'student-6',
+    schoolId: 'school-1',
+    name: 'David Wilson',
+    email: 'david.w@example.com',
+    enrollmentDate: '2024-09-01T00:00:00Z',
+    status: 'active',
+    courses: ['course-2'],
+  },
+  {
+    id: 'student-7',
+    schoolId: 'school-1',
+    name: 'Sarah Miller',
+    email: 'sarah.m@example.com',
+    enrollmentDate: '2023-09-01T00:00:00Z',
+    status: 'inactive',
+    courses: [],
+  },
+  {
+    id: 'student-8',
+    schoolId: 'school-1',
+    name: 'James Taylor',
+    email: 'james.t@example.com',
+    enrollmentDate: '2022-09-01T00:00:00Z',
+    status: 'graduated',
+    courses: [],
+  },
+  {
+    id: 'student-9',
+    schoolId: 'school-1',
+    name: 'Jessica Anderson',
+    email: 'jessica.a@example.com',
+    enrollmentDate: '2024-09-01T00:00:00Z',
+    status: 'active',
+    courses: ['course-1', 'course-3'],
+  },
+  {
+    id: 'student-10',
+    schoolId: 'school-1',
+    name: 'Robert Thomas',
+    email: 'robert.t@example.com',
+    enrollmentDate: '2023-09-01T00:00:00Z',
+    status: 'active',
+    courses: ['course-2'],
   },
 ];
 
@@ -237,6 +300,22 @@ export const mockApi = {
           totalPages: 1,
         });
       }, 300);
+    });
+  },
+
+  updateStudent: (id: string, data: Partial<Student>): Promise<Student> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Find student and update (mock)
+        const studentIndex = mockStudents.findIndex(s => s.id === id);
+        if (studentIndex >= 0) {
+           mockStudents[studentIndex] = { ...mockStudents[studentIndex], ...data };
+           resolve(mockStudents[studentIndex]);
+        } else {
+           // Return mock student if not found, or just resolve with data
+           resolve({ ...mockStudents[0], ...data, id } as Student);
+        }
+      }, 500);
     });
   },
 };
