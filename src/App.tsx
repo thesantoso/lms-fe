@@ -9,6 +9,9 @@ import DashboardLayout from './components/layout/DashboardLayout';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import OTPVerificationPage from './pages/auth/OTPVerificationPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -40,6 +43,9 @@ const App: React.FC = () => {
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/verify-otp" element={<OTPVerificationPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
               {/* Protected Routes - Admin */}
               <Route

@@ -57,7 +57,7 @@ const Sidebar: React.FC = () => {
   const navItems = getNavItems();
 
   return (
-    <aside className="w-64 bg-white border-r border-neutral-200 flex flex-col h-screen">
+    <aside className="hidden md:flex w-64 bg-white border-r border-neutral-200 flex-col h-screen sticky top-0">
       {/* Logo */}
       <div className="px-6 py-4 border-b border-neutral-200">
         <h1 className="text-2xl font-bold text-primary-600">LMS Dashboard</h1>
