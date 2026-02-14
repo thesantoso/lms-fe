@@ -53,9 +53,33 @@ export interface Student {
 export interface Teacher {
   id: string;
   schoolId: string;
+  nip: string;
+  nuptk?: string;
+  teacherId?: string; // Nomor Induk Guru
+  nik?: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
+  placeOfBirth?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female';
+  religion?: string;
+  lastEducation?: string;
+  photo?: string;
   email: string;
+  phone?: string;
+  address?: string;
+  rt?: string;
+  rw?: string;
+  province?: string;
+  regency?: string;
+  district?: string;
+  village?: string;
+  postalCode?: string;
   subject: string;
+  employmentStatus: 'PNS' | 'Honorer' | 'Tetap Yayasan';
+  position?: string; // Jabatan
+  classAssigned?: string; // Kelas
   courses: string[];
   status: 'active' | 'inactive';
 }

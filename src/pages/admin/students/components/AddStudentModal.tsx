@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { User, ArrowRight, ArrowLeft, Image, Calendar, CaretDown, CaretUp, FloppyDisk } from '@phosphor-icons/react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
@@ -23,9 +23,12 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const [currentStep, setCurrentStep] = useState(0);
   const [isPreviousSchoolOpen, setIsPreviousSchoolOpen] = useState(false);
   const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     // Identity
+    photo: null as File | null,
     nisn: '',
     nis: '',
     kk: '',
@@ -83,6 +86,19 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     guardianRelationship: '',
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({ ...formData, photo: file });
+      const objectUrl = URL.createObjectURL(file);
+      setPhotoPreview(objectUrl);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleNext = () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
@@ -105,12 +121,25 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {/* Left: Photo Upload */}
             <div className="md:col-span-4">
-              <div className="border-2 border-dashed border-neutral-300 rounded-xl p-8 flex flex-col items-center justify-center text-center h-64 hover:bg-neutral-50 transition-colors cursor-pointer group">
-                <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4 group-hover:bg-white group-hover:shadow-sm transition-all">
-                  <User size={32} />
-                </div>
-                <p className="font-medium text-neutral-900 mb-1">Unggah Foto</p>
-                <p className="text-xs text-neutral-500">JPG/PNG • Maks 2MB</p>
+              <div 
+                onClick={handleUploadClick}
+                className="border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center text-center h-64 hover:bg-neutral-50 transition-colors cursor-pointer group relative overflow-hidden"
+              >
+                {photoPreview ? (
+                  <img 
+                    src={photoPreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <div className="p-8 flex flex-col items-center justify-center w-full h-full">
+                    <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4 group-hover:bg-white group-hover:shadow-sm transition-all">
+                      <User size={32} />
+                    </div>
+                    <p className="font-medium text-neutral-900 mb-1">Unggah Foto</p>
+                    <p className="text-xs text-neutral-500">JPG/PNG • Maks 2MB</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -157,12 +186,25 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {/* Left: Photo Upload */}
             <div className="md:col-span-4">
-              <div className="border-2 border-dashed border-neutral-300 rounded-xl p-8 flex flex-col items-center justify-center text-center h-64 hover:bg-neutral-50 transition-colors cursor-pointer group">
-                <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4 group-hover:bg-white group-hover:shadow-sm transition-all">
-                  <Image size={32} />
-                </div>
-                <p className="font-medium text-neutral-900 mb-1">Upload foto siswa</p>
-                <p className="text-xs text-neutral-500">Drag and drop atau klik untuk memilih file</p>
+              <div 
+                onClick={handleUploadClick}
+                className="border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center text-center h-64 hover:bg-neutral-50 transition-colors cursor-pointer group relative overflow-hidden"
+              >
+                {photoPreview ? (
+                  <img 
+                    src={photoPreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <div className="p-8 flex flex-col items-center justify-center w-full h-full">
+                    <div className="w-16 h-16 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4 group-hover:bg-white group-hover:shadow-sm transition-all">
+                      <Image size={32} />
+                    </div>
+                    <p className="font-medium text-neutral-900 mb-1">Upload foto siswa</p>
+                    <p className="text-xs text-neutral-500">Drag and drop atau klik untuk memilih file</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -885,6 +927,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
       {/* Content */}
       <div className="min-h-[300px]">
+        <input 
+          type="file" 
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          className="hidden" 
+          accept="image/png, image/jpeg, image/jpg"
+        />
         {renderStepContent()}
       </div>
 

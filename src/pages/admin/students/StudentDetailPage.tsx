@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,10 +8,12 @@ import {
 } from '@phosphor-icons/react';
 import Card, { CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
+import EditStudentModal from './components/EditStudentModal';
 
 const StudentDetailPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Mock data matching the design
   const student = {
@@ -106,7 +108,7 @@ const StudentDetailPage: React.FC = () => {
           </Button>
           <Button 
             className="bg-[#2563EB] hover:bg-blue-700 text-white border-none"
-            onClick={() => navigate(`/admin/students/edit/${id}`)}
+            onClick={() => setIsEditModalOpen(true)}
           >
             <PencilSimple size={18} className="mr-2" />
             Edit
@@ -215,6 +217,14 @@ const StudentDetailPage: React.FC = () => {
         </div>
 
       </div>
+
+      {id && (
+        <EditStudentModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          studentId={id}
+        />
+      )}
     </div>
   );
 };

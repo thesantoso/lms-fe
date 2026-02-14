@@ -17,9 +17,13 @@ import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CoursesPage from './pages/admin/CoursesPage';
 import StudentsPage from './pages/admin/StudentsPage';
-import AddStudentPage from './pages/admin/students/AddStudentPage';
 import StudentDetailPage from './pages/admin/students/StudentDetailPage';
-import EditStudentPage from './pages/admin/students/EditStudentPage';
+import TeachersPage from './pages/admin/TeachersPage';
+import TeacherDetailPage from './pages/admin/teachers/TeacherDetailPage';
+import StaffPage from './pages/admin/StaffPage';
+import StaffDetailPage from './pages/admin/staff/StaffDetailPage';
+import ParentsPage from './pages/admin/ParentsPage';
+import ParentDetailPage from './pages/admin/parents/ParentDetailPage';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -62,10 +66,13 @@ const App: React.FC = () => {
                 <Route index element={<AdminDashboard />} />
                 <Route path="courses" element={<CoursesPage />} />
                 <Route path="students" element={<StudentsPage />} />
-                <Route path="students/add" element={<AddStudentPage />} />
                 <Route path="students/:id" element={<StudentDetailPage />} />
-                <Route path="students/edit/:id" element={<EditStudentPage />} />
-                <Route path="teachers" element={<div className="text-center py-8">Teachers page coming soon</div>} />
+                <Route path="teachers" element={<TeachersPage />} />
+                <Route path="teachers/:id" element={<TeacherDetailPage />} />
+                <Route path="staff" element={<StaffPage />} />
+                <Route path="staff/:id" element={<StaffDetailPage />} />
+                <Route path="parents" element={<ParentsPage />} />
+                <Route path="parents/:id" element={<ParentDetailPage />} />
                 <Route path="schools" element={<div className="text-center py-8">Schools page coming soon</div>} />
                 <Route path="settings" element={<div className="text-center py-8">Settings page coming soon</div>} />
               </Route>
