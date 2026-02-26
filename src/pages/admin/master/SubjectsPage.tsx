@@ -144,7 +144,7 @@ const SubjectsPage: React.FC = () => {
                   <div className="relative">
                     <Button 
                       variant="outline" 
-                      className={`text-white bg-primary-600 hover:bg-primary-700 border-none px-4 font-medium h-10 ${isFilterOpen ? 'ring-2 ring-primary-300' : ''}`}
+                      className={`text-white bg-primary-600 hover:bg-primary-700 border-none px-4 font-medium h-10 bg-blue-600 hover:bg-blue-700 ${isFilterOpen ? 'ring-2 ring-primary-300' : ''}`}
                       onClick={() => setIsFilterOpen(!isFilterOpen)}
                     >
                       <Funnel size={20} className="mr-2" />
@@ -205,7 +205,7 @@ const SubjectsPage: React.FC = () => {
                             </Button>
                             <Button 
                               size="sm"
-                              className="bg-primary-600 text-white hover:bg-primary-700 h-8 px-4"
+                              className="bg-primary-600 bg-blue-600 hover:bg-blue-700  text-white hover:bg-primary-700 h-8 px-4"
                               onClick={() => setIsFilterOpen(false)}
                             >
                               Terapkan
@@ -217,7 +217,7 @@ const SubjectsPage: React.FC = () => {
                   </div>
                   <Button 
                     leftIcon={<Plus size={20} weight="bold" />} 
-                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 font-medium h-10 border-none"
+                    className="bg-primary-600 bg-blue-600 hover:bg-blue-700  hover:bg-primary-700 text-white px-4 font-medium h-10 border-none"
                     onClick={() => alert('Fitur tambah mapel akan segera hadir')}
                   >
                     Tambah Mapel
@@ -338,7 +338,7 @@ const SubjectsPage: React.FC = () => {
                       <td className="px-4 py-4">
                         <Button 
                             size="sm" 
-                            className="h-8 px-4 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md shadow-sm shadow-primary-200" 
+                            className="h-8 px-4 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md shadow-sm shadow-primary-200 bg-blue-600 hover:bg-blue-700 " 
                             onClick={() => alert('Detail mapel akan segera hadir')}
                         >
                             <List size={16} weight="bold" className="mr-2" />
@@ -385,8 +385,8 @@ const SubjectsPage: React.FC = () => {
                             <button
                                 key={page}
                                 className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-all mx-0.5 ${
-                                    currentPage === page 
-                                        ? 'bg-primary-600 text-white shadow-sm' 
+                                  currentPage === page 
+                                        ? 'bg-[#2563EB] text-white shadow-sm' 
                                         : 'text-neutral-600 hover:bg-neutral-100'
                                 }`}
                                 onClick={() => setCurrentPage(page)}
@@ -435,7 +435,7 @@ const SubjectsPage: React.FC = () => {
               Batal
             </Button>
             <Button
-              className="flex-1 bg-primary-600 hover:bg-primary-700 text-white h-11 font-semibold rounded-lg shadow-md shadow-primary-200"
+              className="flex-1 bg-primary-600 hover:bg-primary-700 text-white h-11 font-semibold rounded-lg shadow-md shadow-primary-200 bg-blue-600 hover:bg-blue-700"
               onClick={() => {
                 if (confirmDialog.subjectId) {
                   executeStatusChange(confirmDialog.subjectId, confirmDialog.currentStatus);

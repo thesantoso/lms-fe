@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   MagnifyingGlass, 
@@ -17,25 +18,29 @@ import Select from '@/components/ui/Select';
 import Switch from '@/components/ui/Switch';
 import Checkbox from '@/components/ui/Checkbox';
 import Modal from '@/components/ui/Modal';
+import AddClassModal from './components/AddClassModal';
 
 // Mock data for Classes
 const MOCK_CLASSES = Array.from({ length: 21 }).map((_, index) => ({
   id: `${index + 1}`,
-  name: `10 MIPA ${index % 5 + 1}`,
+  roomNumber: `${50 + index}`,
+  name: `10-IPA-${(index % 3) + 1}`,
   grade: '10',
-  major: 'MIPA',
-  homeroomTeacher: index % 2 === 0 ? 'Ahmad Rizki Pratama' : 'Siti Aisyah',
-  studentsCount: 30 + (index % 5),
-  academicYear: '2024/2025',
+  major: 'IPA',
+  homeroomTeacher: index % 2 === 0 ? 'Budi Santoso' : 'Siti Aisyah',
+  quota: 36,
+  academicYear: '2024 / 2025',
   status: index % 10 === 0 ? 'inactive' : 'active',
 }));
 
 const ClassesPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     grade: '',
@@ -48,6 +53,22 @@ const ClassesPage: React.FC = () => {
     classId: null,
     currentStatus: ''
   });
+
+  const handleSaveClass = (data: any) => {
+    // Mock save
+    const newClass = {
+      id: `${classesList.length + 1}`,
+      roomNumber: 'New',
+      name: data.name,
+      grade: data.gradeLevel,
+      major: 'IPA', // Default for now
+      homeroomTeacher: 'Guru Baru', // Should get name from ID
+      quota: parseInt(data.quota),
+      academicYear: data.academicYear,
+      status: 'active',
+    };
+    setClassesList([newClass, ...classesList]);
+  };
 
   // Derived filter options
   const uniqueGrades = Array.from(new Set(MOCK_CLASSES.map(c => c.grade))).sort();
@@ -144,11 +165,11 @@ const ClassesPage: React.FC = () => {
                 <div className="flex items-center gap-3 relative">
                   <div className="relative">
                     <Button 
-                      variant="outline" 
-                      className={`text-white bg-primary-600 hover:bg-primary-700 border-none px-4 font-medium h-10 ${isFilterOpen ? 'ring-2 ring-primary-300' : ''}`}
+                      variant="primary" 
+                      className={`h-10 bg-blue-600 hover:bg-blue-700  ${isFilterOpen ? 'ring-2 ring-primary-300' : ''}`}
                       onClick={() => setIsFilterOpen(!isFilterOpen)}
                     >
-                      <Funnel size={20} className="mr-2" />
+                      <Funnel size={20} weight="bold" className="mr-2" />
                       Filter
                     </Button>
 
@@ -206,7 +227,7 @@ const ClassesPage: React.FC = () => {
                             </Button>
                             <Button 
                               size="sm"
-                              className="bg-primary-600 text-white hover:bg-primary-700 h-8 px-4"
+                              className="bg-primary-600 bg-blue-600 hover:bg-blue-700 text-white hover:bg-primary-700 h-8 px-4 "
                               onClick={() => setIsFilterOpen(false)}
                             >
                               Terapkan
@@ -217,10 +238,11 @@ const ClassesPage: React.FC = () => {
                     )}
                   </div>
                   <Button 
-                    leftIcon={<Plus size={20} weight="bold" />} 
-                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 font-medium h-10 border-none"
-                    onClick={() => alert('Fitur tambah kelas akan segera hadir')}
+                    variant="primary"
+                    className="h-10 bg-blue-600 hover:bg-blue-700 "
+                    onClick={() => setIsAddModalOpen(true)}
                   >
+                    <Plus size={20} weight="bold" className="mr-2" />
                     Tambah Kelas
                   </Button>
                 </div>
@@ -243,7 +265,7 @@ const ClassesPage: React.FC = () => {
                 </div>
                 <div className="w-full sm:w-72">
                     <Input
-                        placeholder="Cari Kelas..."
+                        placeholder="Cari tahun ajaran..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         leftIcon={<MagnifyingGlass size={20} className="text-neutral-400" />}
@@ -270,6 +292,11 @@ const ClassesPage: React.FC = () => {
                     </th>
                     <th className="px-4 py-3 text-sm font-bold text-neutral-800">
                         <div className="flex items-center gap-1 cursor-pointer hover:text-primary-600">
+                            No Ruangan <SortIcon />
+                        </div>
+                    </th>
+                    <th className="px-4 py-3 text-sm font-bold text-neutral-800">
+                        <div className="flex items-center gap-1 cursor-pointer hover:text-primary-600">
                             Nama Kelas <SortIcon />
                         </div>
                     </th>
@@ -280,12 +307,12 @@ const ClassesPage: React.FC = () => {
                     </th>
                     <th className="px-4 py-3 text-sm font-bold text-neutral-800">
                         <div className="flex items-center gap-1 cursor-pointer hover:text-primary-600">
-                            Jumlah Siswa <SortIcon />
+                            Tahun Ajaran <SortIcon />
                         </div>
                     </th>
                     <th className="px-4 py-3 text-sm font-bold text-neutral-800">
                         <div className="flex items-center gap-1 cursor-pointer hover:text-primary-600">
-                            Tahun Ajaran <SortIcon />
+                            Kuota Kelas <SortIcon />
                         </div>
                     </th>
                     <th className="px-4 py-3 text-sm font-bold text-neutral-800">
@@ -317,10 +344,11 @@ const ClassesPage: React.FC = () => {
                       <td className="px-4 py-4 text-sm text-neutral-600 font-medium">
                         {(currentPage - 1) * parseInt(entriesPerPage) + index + 1}
                       </td>
+                      <td className="px-4 py-4 text-sm text-neutral-900 font-medium">{cls.roomNumber}</td>
                       <td className="px-4 py-4 text-sm text-neutral-900 font-medium">{cls.name}</td>
                       <td className="px-4 py-4 text-sm text-neutral-600">{cls.homeroomTeacher}</td>
-                      <td className="px-4 py-4 text-sm text-neutral-600">{cls.studentsCount} Siswa</td>
                       <td className="px-4 py-4 text-sm text-neutral-600">{cls.academicYear}</td>
+                      <td className="px-4 py-4 text-sm text-neutral-600">{cls.quota}</td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                           cls.status === 'active' 
@@ -333,8 +361,9 @@ const ClassesPage: React.FC = () => {
                       <td className="px-4 py-4">
                         <Button 
                             size="sm" 
-                            className="h-8 px-4 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md shadow-sm shadow-primary-200" 
-                            onClick={() => alert('Detail kelas akan segera hadir')}
+                            variant="primary"
+                            className="shadow-sm bg-blue-600 hover:bg-blue-700  shadow-primary-200" 
+                            onClick={() => navigate(`/admin/master/classes/${cls.id}`)}
                         >
                             <List size={16} weight="bold" className="mr-2" />
                             Detail
@@ -351,7 +380,7 @@ const ClassesPage: React.FC = () => {
                   ))}
                   {filteredClasses.length === 0 && (
                      <tr>
-                        <td colSpan={9} className="px-4 py-12 text-center text-neutral-500">
+                        <td colSpan={10} className="px-4 py-12 text-center text-neutral-500">
                            {searchTerm ? 'Tidak ada kelas yang cocok dengan pencarian' : 'Belum ada data kelas'}
                         </td>
                      </tr>
@@ -379,9 +408,9 @@ const ClassesPage: React.FC = () => {
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map(page => (
                             <button
                                 key={page}
-                                className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-all mx-0.5 ${
-                                    currentPage === page 
-                                        ? 'bg-primary-600 text-white shadow-sm' 
+                                className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-all mx-0.5  ${
+                                     currentPage === page 
+                                        ? 'bg-[#2563EB] text-white shadow-sm' 
                                         : 'text-neutral-600 hover:bg-neutral-100'
                                 }`}
                                 onClick={() => setCurrentPage(page)}
@@ -430,7 +459,7 @@ const ClassesPage: React.FC = () => {
               Batal
             </Button>
             <Button
-              className="flex-1 bg-primary-600 hover:bg-primary-700 text-white h-11 font-semibold rounded-lg shadow-md shadow-primary-200"
+              className="flex-1 bg-primary-600 hover:bg-primary-700 text-white h-11 font-semibold rounded-lg shadow-md shadow-primary-200 bg-blue-600 hover:bg-blue-700 "
               onClick={() => {
                 if (confirmDialog.classId) {
                   executeStatusChange(confirmDialog.classId, confirmDialog.currentStatus);
@@ -442,6 +471,12 @@ const ClassesPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      <AddClassModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleSaveClass}
+      />
     </div>
   );
 };
