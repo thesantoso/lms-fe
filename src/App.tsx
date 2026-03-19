@@ -27,6 +27,7 @@ import ParentDetailPage from './pages/admin/parents/ParentDetailPage';
 import ClassesPage from './pages/admin/master/ClassesPage';
 import ClassDetailPage from './pages/admin/master/ClassDetailPage';
 import SubjectsPage from './pages/admin/master/SubjectsPage';
+import SubjectDetailPage from './pages/admin/master/SubjectDetailPage';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -81,6 +82,7 @@ const App: React.FC = () => {
                 <Route path="master/classes" element={<ClassesPage />} />
                 <Route path="master/classes/:id" element={<ClassDetailPage />} />
                 <Route path="master/subjects" element={<SubjectsPage />} />
+                <Route path="master/subjects/:id" element={<SubjectDetailPage />} />
                 
                 <Route path="schools" element={<div className="text-center py-8">Schools page coming soon</div>} />
                 <Route path="settings" element={<div className="text-center py-8">Settings page coming soon</div>} />

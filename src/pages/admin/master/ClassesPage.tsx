@@ -349,7 +349,7 @@ const ClassesPage: React.FC = () => {
                       <td className="px-4 py-4 text-sm text-neutral-600">{cls.homeroomTeacher}</td>
                       <td className="px-4 py-4 text-sm text-neutral-600">{cls.academicYear}</td>
                       <td className="px-4 py-4 text-sm text-neutral-600">{cls.quota}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                           cls.status === 'active' 
                             ? 'bg-emerald-100 text-emerald-700'

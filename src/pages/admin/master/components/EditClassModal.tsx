@@ -238,18 +238,18 @@ const EditClassModal: React.FC<EditClassModalProps> = ({ isOpen, onClose, onSave
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-100 flex justify-end gap-3">
+          <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row sm:justify-end gap-3">
              <Button
                type="button"
                variant="ghost"
-               className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium px-6"
+               className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium px-6 w-full sm:w-auto"
                onClick={onClose}
              >
                Batal
              </Button>
              <Button
                type="submit"
-               className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 shadow-md shadow-primary-200"
+               className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 shadow-md shadow-primary-200 w-full sm:w-auto"
              >
                Simpan
              </Button>

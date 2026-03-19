@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, 
   MagnifyingGlass, 
@@ -17,6 +18,7 @@ import Select from '@/components/ui/Select';
 import Switch from '@/components/ui/Switch';
 import Checkbox from '@/components/ui/Checkbox';
 import Modal from '@/components/ui/Modal';
+import AddSubjectModal from './components/AddSubjectModal';
 
 // Mock data for Subjects
 const MOCK_SUBJECTS = Array.from({ length: 21 }).map((_, index) => ({
@@ -30,11 +32,13 @@ const MOCK_SUBJECTS = Array.from({ length: 21 }).map((_, index) => ({
 }));
 
 const SubjectsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState('10');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: '',
     category: '',
@@ -47,6 +51,20 @@ const SubjectsPage: React.FC = () => {
     subjectId: null,
     currentStatus: ''
   });
+
+  const handleSaveSubject = (data: any) => {
+    // Mock save
+    const newSubject = {
+      id: `${subjectsList.length + 1}`,
+      code: `MP${100 + subjectsList.length}`,
+      name: data.name,
+      category: data.category,
+      level: data.gradeLevel,
+      teachersCount: 0,
+      status: 'active',
+    };
+    setSubjectsList([newSubject, ...subjectsList]);
+  };
 
   // Derived filter options
   const uniqueCategories = Array.from(new Set(MOCK_SUBJECTS.map(s => s.category))).sort();
@@ -143,11 +161,11 @@ const SubjectsPage: React.FC = () => {
                 <div className="flex items-center gap-3 relative">
                   <div className="relative">
                     <Button 
-                      variant="outline" 
-                      className={`text-white bg-primary-600 hover:bg-primary-700 border-none px-4 font-medium h-10 bg-blue-600 hover:bg-blue-700 ${isFilterOpen ? 'ring-2 ring-primary-300' : ''}`}
+                      variant="primary" 
+                      className={`h-10 bg-primary-600 bg-blue-600  ${isFilterOpen ? 'ring-2 ring-primary-300' : ''}`}
                       onClick={() => setIsFilterOpen(!isFilterOpen)}
                     >
-                      <Funnel size={20} className="mr-2" />
+                      <Funnel size={20} weight="bold" className="mr-2" />
                       Filter
                     </Button>
 
@@ -205,7 +223,7 @@ const SubjectsPage: React.FC = () => {
                             </Button>
                             <Button 
                               size="sm"
-                              className="bg-primary-600 bg-blue-600 hover:bg-blue-700  text-white hover:bg-primary-700 h-8 px-4"
+                             className="bg-primary-600 bg-blue-600 hover:bg-blue-700 text-white hover:bg-primary-700 h-8 px-4 "
                               onClick={() => setIsFilterOpen(false)}
                             >
                               Terapkan
@@ -216,10 +234,11 @@ const SubjectsPage: React.FC = () => {
                     )}
                   </div>
                   <Button 
-                    leftIcon={<Plus size={20} weight="bold" />} 
-                    className="bg-primary-600 bg-blue-600 hover:bg-blue-700  hover:bg-primary-700 text-white px-4 font-medium h-10 border-none"
-                    onClick={() => alert('Fitur tambah mapel akan segera hadir')}
+                    variant="primary"
+                    className="h-10 bg-primary-600 bg-blue-600 "
+                    onClick={() => setIsAddModalOpen(true)}
                   >
+                    <Plus size={20} weight="bold" className="mr-2" />
                     Tambah Mapel
                   </Button>
                 </div>
@@ -287,7 +306,7 @@ const SubjectsPage: React.FC = () => {
                             Tingkat <SortIcon />
                         </div>
                     </th>
-                    <th className="px-4 py-3 text-sm font-bold text-neutral-800">
+                    <th className="px-3 py-3 text-sm font-bold text-neutral-800">
                         <div className="flex items-center gap-1 cursor-pointer hover:text-primary-600">
                             Jumlah Guru <SortIcon />
                         </div>
@@ -338,8 +357,9 @@ const SubjectsPage: React.FC = () => {
                       <td className="px-4 py-4">
                         <Button 
                             size="sm" 
-                            className="h-8 px-4 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md shadow-sm shadow-primary-200 bg-blue-600 hover:bg-blue-700 " 
-                            onClick={() => alert('Detail mapel akan segera hadir')}
+                            variant="primary"
+                            className="shadow-sm shadow-primary-200 bg-blue-600 text-white hover:bg-blue-700" 
+                            onClick={() => navigate(`/admin/master/subjects/${subj.id}`)}
                         >
                             <List size={16} weight="bold" className="mr-2" />
                             Detail
@@ -447,6 +467,12 @@ const SubjectsPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      <AddSubjectModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleSaveSubject}
+      />
     </div>
   );
 };

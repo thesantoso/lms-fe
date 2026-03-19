@@ -77,6 +77,7 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
         const nameParts = teacher.name ? teacher.name.split(' ') : [''];
         const firstName = nameParts[0];
         const lastName = nameParts.slice(1).join(' ');
+        const genderValue = teacher.gender === 'female' ? 'Perempuan' : 'Laki - laki';
 
         setFormData({
             photo: null,
@@ -86,9 +87,9 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
             nik: teacher.nik || '',
             firstName: firstName,
             lastName: lastName,
-            birthPlace: teacher.birthPlace || '',
-            birthDate: teacher.birthDate ? new Date(teacher.birthDate).toISOString().split('T')[0] : '',
-            gender: teacher.gender || 'Laki - laki',
+            birthPlace: teacher.placeOfBirth || '',
+            birthDate: teacher.dateOfBirth ? new Date(teacher.dateOfBirth).toISOString().split('T')[0] : '',
+            gender: genderValue,
             religion: teacher.religion || '',
             lastEducation: teacher.lastEducation || '',
             address: teacher.address || '',
@@ -102,7 +103,7 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
             email: teacher.email || '',
             phone: teacher.phone || '',
             subject: teacher.subject || '',
-            employmentStatus: teacher.employmentStatus || '',
+            employmentStatus: teacher.employmentStatus,
             position: teacher.position || '',
             classAssigned: teacher.classAssigned || '',
         });
@@ -146,15 +147,43 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
     if (!teacher?.id) return;
 
     try {
+      const gender: Teacher['gender'] =
+        formData.gender === 'Perempuan' ? 'female' : 'male';
+      const employmentStatus = (
+        ['PNS', 'Honorer', 'Tetap Yayasan'] as const
+      ).includes(formData.employmentStatus as any)
+        ? (formData.employmentStatus as Teacher['employmentStatus'])
+        : teacher.employmentStatus;
+
       await teacherApi.update(teacher.id, {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
         nip: formData.nip,
+        nuptk: formData.nuptk || undefined,
+        teacherId: formData.teacherId || undefined,
+        nik: formData.nik || undefined,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+        placeOfBirth: formData.birthPlace || undefined,
+        dateOfBirth: formData.birthDate || undefined,
+        gender,
+        religion: formData.religion || undefined,
+        lastEducation: formData.lastEducation || undefined,
+        photo: photoPreview || undefined,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+        rt: formData.rt || undefined,
+        rw: formData.rw || undefined,
+        province: formData.province || undefined,
+        regency: formData.regency || undefined,
+        district: formData.district || undefined,
+        village: formData.village || undefined,
+        postalCode: formData.postalCode || undefined,
         subject: formData.subject,
-        employmentStatus: formData.employmentStatus as any,
-        status: teacher.status, // Keep existing status
-        ...formData,
-        photo: photoPreview || undefined // Handle photo appropriately in real app
+        employmentStatus,
+        position: formData.position || undefined,
+        classAssigned: formData.classAssigned || undefined,
+        status: teacher.status,
       });
 
       await Swal.fire({
@@ -587,13 +616,13 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
       </div>
 
       {/* Footer / Actions */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-neutral-200">
         <Button
           variant="outline"
           onClick={handlePrev}
           disabled={currentStep === 0}
           className={cn(
-            "border-neutral-200 text-neutral-600",
+            "border-neutral-200 text-neutral-600 w-full sm:w-auto",
             currentStep === 0 && "opacity-50 cursor-not-allowed bg-neutral-100"
           )}
         >
@@ -602,7 +631,7 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
         </Button>
         <Button
           onClick={handleNext}
-          className="bg-[#2563EB] hover:bg-blue-700 text-white"
+          className="bg-[#2563EB] hover:bg-blue-700 text-white w-full sm:w-auto"
         >
           {currentStep === STEPS.length - 1 ? 'Simpan Perubahan' : 'Berikutnya'}
           {currentStep === STEPS.length - 1 ? (

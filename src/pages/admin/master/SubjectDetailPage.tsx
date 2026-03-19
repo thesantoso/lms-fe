@@ -8,35 +8,28 @@ import {
 } from '@phosphor-icons/react';
 import Card, { CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import EditClassModal from './components/EditClassModal';
-// import EditClassModal from './components/EditClassModal';
+import EditSubjectModal from './components/EditSubjectModal';
 
 // Mock data
-const MOCK_CLASS_DETAIL = {
+const MOCK_SUBJECT_DETAIL = {
   id: '1',
-  roomNumber: '59',
-  name: '10-IPA-1',
-  homeroomTeacher: 'Budi Santoso',
-  academicYear: '2024 / 2025',
-  gradeLevel: '10',
-  quota: 40,
+  code: 'MP100',
+  name: 'Bahasa Indonesia',
+  category: 'Muatan Lokal',
+  gradeLevel: '10', // Should be "-" based on screenshot if not applicable
+  curriculumType: 'Merdeka',
+  kkm: 77,
+  material: '-',
   status: 'active',
-  students: [
-    { id: '022222', name: 'Rian Suryana' },
-    { id: '022223', name: 'Kuncensius Pradana' },
-    { id: '022224', name: 'Boamnisme' },
-    { id: '022225', name: 'Arkan Sight' },
-    { id: '022226', name: 'Yugito Kurniawan' },
-  ]
 };
 
-const ClassDetailPage: React.FC = () => {
+const SubjectDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [classData, setClassData] = useState(MOCK_CLASS_DETAIL);
+  const [subjectData, setSubjectData] = useState(MOCK_SUBJECT_DETAIL);
 
   const handleSave = (updatedData: any) => {
-    setClassData({ ...classData, ...updatedData });
+    setSubjectData({ ...subjectData, ...updatedData });
     setIsEditModalOpen(false);
   };
 
@@ -58,36 +51,34 @@ const ClassDetailPage: React.FC = () => {
         <div className="flex items-center text-sm text-neutral-500">
             <span className="hover:text-primary-600 cursor-pointer" onClick={() => navigate('/admin')}>Dasbor</span>
             <CaretRight size={12} className="mx-2" />
-            <span className="hover:text-primary-600 cursor-pointer" onClick={() => navigate('/admin/master/classes')}>Master Data</span>
+            <span className="hover:text-primary-600 cursor-pointer" onClick={() => navigate('/admin/master/subjects')}>Mata Pelajaran</span>
             <CaretRight size={12} className="mx-2" />
-            <span className="hover:text-primary-600 cursor-pointer" onClick={() => navigate('/admin/master/classes')}>Kelas</span>
-            <CaretRight size={12} className="mx-2" />
-            <span className="text-primary-600 font-medium">Detail Kelas</span>
+            <span className="text-primary-600 font-medium">Detail Mata Pelajaran</span>
         </div>
       </div>
 
       {/* Main Content Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-neutral-900">Detail Kelas</h2>
-          <p className="text-sm text-neutral-500">Informasi lengkap data kelas</p>
+          <h2 className="text-xl font-bold text-neutral-900">Detail Mata Pelajaran</h2>
+          <p className="text-sm text-neutral-500">Informasi lengkap data mata pelajaran</p>
         </div>
         <div className="flex items-center gap-3">
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            classData.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+            subjectData.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
           }`}>
-            {classData.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
+            {subjectData.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
           </span>
           <Button 
             variant="outline" 
             className="bg-neutral-100 hover:bg-neutral-200 border-none text-neutral-600"
             leftIcon={<ArrowLeft size={18} />}
-            onClick={() => navigate('/admin/master/classes')}
+            onClick={() => navigate('/admin/master/subjects')}
           >
             Kembali
           </Button>
           <Button 
-            className="bg-primary-600 bg-blue-600 hover:bg-blue-700  hover:bg-primary-700 text-white border-none shadow-md shadow-primary-200"
+            className="bg-primary-600 hover:bg-primary-700 text-white border-none shadow-md shadow-primary-200 bg-blue-600 text-white hover:bg-blue-700"
             leftIcon={<PencilSimple size={18} weight="bold" />}
             onClick={() => setIsEditModalOpen(true)}
           >
@@ -97,34 +88,34 @@ const ClassDetailPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        {/* Class Identity */}
+        {/* Subject Details */}
         <Card className="border-none shadow-sm bg-white rounded-xl">
           <CardBody className="p-6">
             <h3 className="text-lg font-bold text-neutral-900 mb-6 pb-4 border-b border-neutral-100">
-              Identitas Kelas
+              Kurikulum
             </h3>
             
             <div className="space-y-1">
-              <InfoRow label="No Ruangan" value={classData.roomNumber} />
-              <InfoRow label="Nama Kelas" value={classData.name} />
-              <InfoRow label="Wali Kelas" value={classData.homeroomTeacher} />
-              <InfoRow label="Tahun Ajaran" value={classData.academicYear} />
-              <InfoRow label="Tingkat Kelas" value={classData.gradeLevel} />
-              <InfoRow label="Kuota Siswa" value={classData.quota} />
+              <InfoRow label="Nama Mapel" value={subjectData.name} />
+              <InfoRow label="Kelompok Mapel" value={subjectData.category} />
+              <InfoRow label="Kelas" value={subjectData.gradeLevel === '0' ? '-' : subjectData.gradeLevel} />
+              <InfoRow label="Tipe Kurikulum" value={subjectData.curriculumType} />
+              <InfoRow label="KKM Target" value={subjectData.kkm} />
+              <InfoRow label="Materi" value={subjectData.material} />
             </div>
           </CardBody>
         </Card>
       </div>
 
       {/* Edit Modal */}
-      <EditClassModal 
+      <EditSubjectModal 
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        classData={classData}
+        subjectData={subjectData}
         onSave={handleSave}
       />
     </div>
   );
 };
 
-export default ClassDetailPage;
+export default SubjectDetailPage;

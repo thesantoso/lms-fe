@@ -8,7 +8,6 @@ import loginBg from '@/assets/login-bg.svg';
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSent, setIsSent] = useState(false);
   
   const navigate = useNavigate();
 

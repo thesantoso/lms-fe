@@ -5,11 +5,7 @@ import {
   ArrowLeft, 
   Image as ImageIcon, 
   Calendar, 
-  CaretDown, 
-  FloppyDisk,
-  ChalkboardTeacher,
-  IdentificationCard,
-  Briefcase
+  FloppyDisk
 } from '@phosphor-icons/react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
@@ -18,6 +14,7 @@ import Select from '@/components/ui/Select';
 import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
 import { teacherApi } from '@/lib/api/services';
+import type { Teacher } from '@/types';
 
 interface AddTeacherModalProps {
   isOpen: boolean;
@@ -101,23 +98,46 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClose }) =>
 
   const handleSubmit = async () => {
     try {
-      // In a real app, you would use FormData here
-      // const data = new FormData();
-      // ... append fields
-      
+      const gender: Teacher['gender'] =
+        formData.gender === 'Perempuan' ? 'female' : 'male';
+
+      const employmentStatus = (
+        ['PNS', 'Honorer', 'Tetap Yayasan'] as const
+      ).includes(formData.employmentStatus as any)
+        ? (formData.employmentStatus as Teacher['employmentStatus'])
+        : 'PNS';
+
       await teacherApi.create({
-        // Mapped fields
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
+        schoolId: 'school-1',
         nip: formData.nip,
+        nuptk: formData.nuptk || undefined,
+        teacherId: formData.teacherId || undefined,
+        nik: formData.nik || undefined,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
+        placeOfBirth: formData.birthPlace || undefined,
+        dateOfBirth: formData.birthDate || undefined,
+        gender,
+        religion: formData.religion || undefined,
+        lastEducation: formData.lastEducation || undefined,
+        photo: photoPreview || undefined,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        address: formData.address || undefined,
+        rt: formData.rt || undefined,
+        rw: formData.rw || undefined,
+        province: formData.province || undefined,
+        regency: formData.regency || undefined,
+        district: formData.district || undefined,
+        village: formData.village || undefined,
+        postalCode: formData.postalCode || undefined,
         subject: formData.subject,
-        employmentStatus: formData.employmentStatus as any,
-        status: 'active',
+        employmentStatus,
+        position: formData.position || undefined,
+        classAssigned: formData.classAssigned || undefined,
         courses: [],
-        
-        // Extended fields (mocked)
-        ...formData,
-        photo: photoPreview || undefined
+        status: 'active',
       });
 
       await Swal.fire({
@@ -579,13 +599,13 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClose }) =>
       </div>
 
       {/* Footer / Actions */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-neutral-200">
         <Button
           variant="outline"
           onClick={handlePrev}
           disabled={currentStep === 0}
           className={cn(
-            "border-neutral-200 text-neutral-600",
+            "border-neutral-200 text-neutral-600 w-full sm:w-auto",
             currentStep === 0 && "opacity-50 cursor-not-allowed bg-neutral-100"
           )}
         >
@@ -594,7 +614,7 @@ const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClose }) =>
         </Button>
         <Button
           onClick={handleNext}
-          className="bg-[#2563EB] hover:bg-blue-700 text-white"
+          className="bg-[#2563EB] hover:bg-blue-700 text-white w-full sm:w-auto"
         >
           {currentStep === STEPS.length - 1 ? 'Simpan' : 'Berikutnya'}
           {currentStep === STEPS.length - 1 ? (

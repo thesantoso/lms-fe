@@ -4,7 +4,6 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-import Checkbox from '@/components/ui/Checkbox';
 import { mockTeachers, mockStudents } from '@/lib/api/mock';
 
 interface AddClassModalProps {
@@ -234,18 +233,18 @@ const AddClassModal: React.FC<AddClassModalProps> = ({ isOpen, onClose, onSave }
             </div>
           </div>
 
-          <div className="pt-4 border-t border-neutral-100 flex justify-between gap-3">
+          <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row sm:justify-between gap-3">
              <Button
                type="button"
                variant="ghost"
-               className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium px-6"
+               className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 font-medium px-6 w-full sm:w-auto"
                onClick={onClose}
              >
                Sebelumnya
              </Button>
              <Button
                type="submit"
-               className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 shadow-md shadow-primary-200"
+               className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 shadow-md shadow-primary-200 w-full sm:w-auto"
              >
                Simpan
              </Button>

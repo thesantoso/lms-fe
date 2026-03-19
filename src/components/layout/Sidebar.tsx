@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { 
-  SignOut, 
   House, 
   GraduationCap, 
   Users, 
@@ -31,19 +30,13 @@ type NavItemType = {
 };
 
 const Sidebar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { currentSchool, schools, switchSchool } = useTenant();
-  const navigate = useNavigate();
   const location = useLocation();
   const [showSchoolMenu, setShowSchoolMenu] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
     'Autentikasi': true // Default expanded
   });
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const toggleMenu = (label: string) => {
     setExpandedMenus(prev => ({

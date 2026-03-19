@@ -1,10 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { User, ArrowRight, ArrowLeft, Image, Calendar, CaretDown, CaretUp, FloppyDisk } from '@phosphor-icons/react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import { cn } from '@/lib/utils';
+import { masterApi, studentApi } from '@/lib/api/services';
+import Swal from 'sweetalert2';
 
 interface AddStudentModalProps {
   isOpen: boolean;
@@ -14,13 +16,18 @@ interface AddStudentModalProps {
 const STEPS = [
   { id: 'identity', label: 'Identitas Siswa' },
   { id: 'personal', label: 'Data Pribadi' },
-  { id: 'address', label: 'Alamat & Kontak' },
+  { id: 'address', label: 'Alamat' },
   { id: 'academic', label: 'Data Akademik' },
   { id: 'parents', label: 'Data Orang Tua' },
 ];
 
 const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [createdStudentId, setCreatedStudentId] = useState<string | null>(null);
+  const [religionOptions, setReligionOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [isReligionLoading, setIsReligionLoading] = useState(false);
+  const [religionError, setReligionError] = useState<string | null>(null);
   const [isPreviousSchoolOpen, setIsPreviousSchoolOpen] = useState(false);
   const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -86,6 +93,34 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     guardianRelationship: '',
   });
 
+  const showWarning = async (text: string) => {
+    await Swal.fire({
+      title: 'Perhatian!',
+      text,
+      icon: 'warning',
+      confirmButtonText: 'OK',
+      customClass: {
+        confirmButton:
+          'bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors',
+      },
+    });
+  };
+
+  const showError = async (text: string) => {
+    await Swal.fire({
+      title: 'Gagal!',
+      text,
+      icon: 'error',
+      confirmButtonText: 'OK',
+      customClass: {
+        confirmButton:
+          'bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors',
+      },
+    });
+  };
+
+  const onlyDigits = (value: string) => value.replace(/\D/g, '');
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -99,11 +134,146 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     fileInputRef.current?.click();
   };
 
-  const handleNext = () => {
-    if (currentStep < STEPS.length - 1) {
+  useEffect(() => {
+    if (!isOpen) return;
+    if (religionOptions.length > 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      setIsReligionLoading(true);
+      setReligionError(null);
+      try {
+        const res = await masterApi.getReligions();
+        const options = (res?.data || []).map((item: any) => ({
+          value: String(item.id),
+          label: String(item.name),
+        }));
+        if (!cancelled) setReligionOptions(options);
+      } catch (err: any) {
+        if (!cancelled) setReligionError(err?.message || 'Gagal memuat data agama');
+      } finally {
+        if (!cancelled) setIsReligionLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, religionOptions.length]);
+
+  const handleNext = async () => {
+    if (currentStep === 0) {
+      // Validate step 0
+      if (!formData.nisn || !formData.nis || !formData.kk) {
+        await showWarning('Mohon lengkapi data NISN, NIS, dan Nomor KK');
+        return;
+      }
+      if (!/^\d{10}$/.test(formData.nisn)) {
+        await showWarning('NISN harus 10 digit angka.');
+        return;
+      }
+      if (!/^\d{16}$/.test(formData.kk)) {
+        await showWarning('Nomor Kartu Keluarga harus 16 digit angka.');
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const payload = {
+          national_student_id: formData.nisn,
+          school_student_id: formData.nis,
+          family_registry: formData.kk
+        };
+        
+        const response = await studentApi.createIdentity(payload);
+        const requestId =
+          (response as any)?.Id ??
+          (response as any)?.id ??
+          (response as any)?.data?.Id ??
+          (response as any)?.data?.id;
+
+        if (!requestId) {
+          await showError('Gagal mendapatkan requestId dari API identitas siswa.');
+          return;
+        }
+
+        setCreatedStudentId(requestId);
+        setCurrentStep(prev => prev + 1);
+      } catch (error: any) {
+        console.error('Failed to create student:', error);
+        const errorMessage = error.message || 'Gagal menyimpan data identitas siswa';
+        await showError(errorMessage);
+        // Prevent moving to next step on error
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (currentStep === 1) {
+      if (!createdStudentId) {
+        await showError('ID siswa belum terbentuk. Silakan ulangi dari langkah Identitas Siswa.');
+        return;
+      }
+
+      if (
+        !formData.firstName ||
+        !formData.lastName ||
+        !formData.birthPlace ||
+        !formData.birthDate ||
+        !formData.religion ||
+        !formData.email ||
+        !formData.phone
+      ) {
+        await showWarning('Mohon lengkapi data pribadi (nama, tempat/tanggal lahir, agama, email, nomor telepon).');
+        return;
+      }
+
+      const normalizeDate = (value: string) => {
+        if (!value) return value;
+        if (value.includes('-')) return value;
+        const parts = value.split('/');
+        if (parts.length !== 3) return value;
+        const [dd, mm, yy] = parts;
+        const year = yy.length === 2 ? `20${yy}` : yy;
+        const day = dd.padStart(2, '0');
+        const month = mm.padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const religionId = Number(formData.religion);
+      if (Number.isNaN(religionId)) {
+        await showWarning('Agama tidak valid.');
+        return;
+      }
+
+      const genderId = formData.gender === 'Perempuan' ? 2 : 1;
+
+      setIsLoading(true);
+      try {
+        await studentApi.updateProfile(createdStudentId, {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          place_of_birth: formData.birthPlace,
+          date_of_birth: normalizeDate(formData.birthDate),
+          religion_id: religionId,
+          gender_id: genderId,
+          address: [formData.email, formData.phone],
+        });
+
+        setCurrentStep(prev => prev + 1);
+      } catch (error: any) {
+        console.error('Failed to update student profile:', error);
+        const errorMessage = error.message || 'Gagal menyimpan data pribadi siswa';
+        await showError(errorMessage);
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      // Submit logic
+      // Final Submit logic
+      // Here you would typically update the rest of the student data using the createdStudentId
       onClose();
     }
   };
@@ -153,7 +323,9 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   <Input 
                     placeholder="10 digit NISN (DAPODIK)" 
                     value={formData.nisn}
-                    onChange={(e) => setFormData({...formData, nisn: e.target.value})}
+                    inputMode="numeric"
+                    maxLength={10}
+                    onChange={(e) => setFormData({...formData, nisn: onlyDigits(e.target.value).slice(0, 10)})}
                   />
                 </div>
                 <div>
@@ -175,7 +347,9 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 <Input 
                   placeholder="16 digit nomor KK" 
                   value={formData.kk}
-                  onChange={(e) => setFormData({...formData, kk: e.target.value})}
+                  inputMode="numeric"
+                  maxLength={16}
+                  onChange={(e) => setFormData({...formData, kk: onlyDigits(e.target.value).slice(0, 16)})}
                 />
               </div>
             </div>
@@ -249,7 +423,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                     Tanggal Lahir <span className="text-red-500">*</span>
                   </label>
                   <Input 
-                    placeholder="dd/mm/yy" 
+                    type="date"
                     value={formData.birthDate}
                     onChange={(e) => setFormData({...formData, birthDate: e.target.value})}
                     rightIcon={<Calendar size={20} className="text-neutral-400" />}
@@ -307,23 +481,46 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   </label>
                   <Select
                     placeholder="Pilih agama..."
-                    options={[
-                      { value: 'islam', label: 'Islam' },
-                      { value: 'kristen', label: 'Kristen' },
-                      { value: 'katolik', label: 'Katolik' },
-                      { value: 'hindu', label: 'Hindu' },
-                      { value: 'buddha', label: 'Buddha' },
-                      { value: 'konghucu', label: 'Konghucu' },
-                    ]}
+                    options={religionOptions}
                     value={formData.religion}
                     onChange={(e) => setFormData({...formData, religion: e.target.value})}
+                    disabled={isReligionLoading || !!religionError}
+                  />
+                  {isReligionLoading && (
+                    <p className="text-xs text-neutral-500 mt-1">Memuat data agama...</p>
+                  )}
+                  {!isReligionLoading && religionError && (
+                    <p className="text-xs text-danger-600 mt-1">{religionError}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <Input 
+                    placeholder="email@gmail.com" 
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                    Nomor Telepon <span className="text-red-500">*</span>
+                  </label>
+                  <Input 
+                    placeholder="Contoh: 0821xxxxxxx" 
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
               </div>
             </div>
           </div>
         );
-      case 2: // Alamat & Kontak
+      case 2: // Alamat
         return (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -443,27 +640,6 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <Input 
-                  placeholder="email@gmail.com" 
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                Nomor Telepon <span className="text-red-500">*</span>
-              </label>
-              <Input 
-                placeholder="Contoh: 0821xxxxxxx" 
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              />
             </div>
           </div>
         );
@@ -911,12 +1087,22 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           {STEPS.map((step, index) => (
             <button
               key={step.id}
-              onClick={() => setCurrentStep(index)}
+              onClick={() => {
+                const unlockedMax = createdStudentId ? STEPS.length - 1 : 0;
+                if (index <= unlockedMax) {
+                  setCurrentStep(index);
+                }
+              }}
               className={cn(
                 "pb-3 text-sm font-medium border-b-2 transition-colors",
-                index === currentStep
-                  ? "border-primary-600 text-primary-600"
-                  : "border-transparent text-neutral-500 hover:text-neutral-700"
+                (() => {
+                  const unlockedMax = createdStudentId ? STEPS.length - 1 : 0;
+                  const isDisabled = index > unlockedMax;
+                  if (isDisabled) return "border-transparent text-neutral-400 pointer-events-none";
+                  return index === currentStep
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-500 hover:text-neutral-700";
+                })()
               )}
             >
               {step.label}
@@ -938,13 +1124,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
       </div>
 
       {/* Footer / Actions */}
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-neutral-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-neutral-200">
         <Button
           variant="outline"
           onClick={handlePrev}
           disabled={currentStep === 0}
           className={cn(
-            "border-neutral-200 text-neutral-600",
+            "border-neutral-200 text-neutral-600 w-full sm:w-auto",
             currentStep === 0 && "opacity-50 cursor-not-allowed bg-neutral-100"
           )}
         >
@@ -953,14 +1139,15 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
         </Button>
         <Button
           onClick={handleNext}
-          className="bg-[#2563EB] hover:bg-blue-700 text-white"
+          disabled={isLoading}
+          className="bg-[#2563EB] hover:bg-blue-700 text-white disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto"
         >
-          {currentStep === STEPS.length - 1 ? 'Simpan' : 'Berikutnya'}
-          {currentStep === STEPS.length - 1 ? (
+          {isLoading ? 'Memproses...' : (currentStep === STEPS.length - 1 ? 'Simpan' : 'Berikutnya')}
+          {!isLoading && (currentStep === STEPS.length - 1 ? (
             <FloppyDisk size={18} className="ml-2" />
           ) : (
             <ArrowRight size={18} className="ml-2" />
-          )}
+          ))}
         </Button>
       </div>
     </Modal>

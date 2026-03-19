@@ -11,13 +11,11 @@ import Card, { CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { teacherApi } from '@/lib/api/services';
 import EditTeacherModal from './components/EditTeacherModal';
-import { useTenant } from '@/contexts/TenantContext';
 
 const TeacherDetailPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { currentSchool } = useTenant();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { data: teacherData, isLoading } = useQuery({
@@ -26,10 +24,7 @@ const TeacherDetailPage: React.FC = () => {
     enabled: !!id,
   });
 
-  const teacher = teacherData?.data;
-
-  // Mock data fallback if API fails or for demo
-  const displayTeacher = teacher || {
+  const displayTeacher: any = teacherData || {
     id: id || '1',
     // Identity
     buptk: '0012345678',
@@ -208,7 +203,7 @@ const TeacherDetailPage: React.FC = () => {
       <EditTeacherModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        teacher={teacher}
+        teacher={teacherData}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['teacher', id] });
         }}
