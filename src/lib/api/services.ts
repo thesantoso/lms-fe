@@ -201,4 +201,14 @@ export const teacherApi = {
 export const masterApi = {
   getReligions: () =>
     apiClient.get<any>('https://be.themelio.tech/api/v1/master/religion'),
+  getCountries: (params?: { page?: number; limit?: number }) =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/country', { params }),
+  getProvinces: (params?: { page?: number; limit?: number }) =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/province', { params }),
+  getRegencies: (params?: { page?: number; limit?: number }) =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/regency', { params }),
+  getDistricts: (params?: { page?: number; limit?: number }) =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/district', { params }),
+  getVillages: (params?: { page?: number; limit?: number }) =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/village', { params }),
 };

@@ -25,9 +25,19 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [createdStudentId, setCreatedStudentId] = useState<string | null>(null);
+  const createdStudentIdRef = useRef<string | null>(null);
+  const profilePayloadRef = useRef<string | null>(null);
   const [religionOptions, setReligionOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [isReligionLoading, setIsReligionLoading] = useState(false);
   const [religionError, setReligionError] = useState<string | null>(null);
+  const [regionData, setRegionData] = useState<{
+    provinces: Array<any>;
+    regencies: Array<any>;
+    districts: Array<any>;
+    villages: Array<any>;
+  }>({ provinces: [], regencies: [], districts: [], villages: [] });
+  const [isRegionLoading, setIsRegionLoading] = useState(false);
+  const [regionError, setRegionError] = useState<string | null>(null);
   const [isPreviousSchoolOpen, setIsPreviousSchoolOpen] = useState(false);
   const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -120,6 +130,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   };
 
   const onlyDigits = (value: string) => value.replace(/\D/g, '');
+  const cleanId = (value: unknown) => String(value ?? '').trim();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,20 +173,91 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     };
   }, [isOpen, religionOptions.length]);
 
-  const handleNext = async () => {
-    if (currentStep === 0) {
-      // Validate step 0
+  useEffect(() => {
+    if (!isOpen) return;
+    if (regionData.regencies.length > 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      setIsRegionLoading(true);
+      setRegionError(null);
+      try {
+        const [provRes, regRes, distRes, villRes] = await Promise.all([
+          masterApi.getProvinces({ page: 1, limit: 1000 }),
+          masterApi.getRegencies({ page: 1, limit: 5000 }),
+          masterApi.getDistricts({ page: 1, limit: 5000 }),
+          masterApi.getVillages({ page: 1, limit: 5000 }),
+        ]);
+
+        const provinces = provRes?.data || [];
+        const regencies = regRes?.data || [];
+        const districts = distRes?.data || [];
+        const villages = villRes?.data || [];
+
+        if (cancelled) return;
+        setRegionData({ provinces, regencies, districts, villages });
+
+        if (!formData.province && provinces.length === 1) {
+          const defaultProvinceId = cleanId(provinces[0]?.id);
+          setFormData((prev) => ({ ...prev, province: defaultProvinceId }));
+        }
+      } catch (err: any) {
+        if (!cancelled) setRegionError(err?.message || 'Gagal memuat data wilayah');
+      } finally {
+        if (!cancelled) setIsRegionLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, regionData.regencies.length]);
+
+  const normalizeDate = (value: string) => {
+    if (!value) return value;
+    if (value.includes('-')) return value;
+    const parts = value.split('/');
+    if (parts.length !== 3) return value;
+    const [dd, mm, yy] = parts;
+    const year = yy.length === 2 ? `20${yy}` : yy;
+    const day = dd.padStart(2, '0');
+    const month = mm.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const validateAddressStep = async () => {
+    if (
+      !formData.address ||
+      !formData.rt ||
+      !formData.rw ||
+      !formData.province ||
+      !formData.regency ||
+      !formData.district ||
+      !formData.village
+    ) {
+      await showWarning('Mohon lengkapi data alamat (alamat, RT, RW, provinsi, kabupaten, kecamatan, kelurahan).');
+      return false;
+    }
+    return true;
+  };
+
+  const advanceStep = async (fromStep: number) => {
+    if (fromStep === 0) {
+      if (createdStudentIdRef.current || createdStudentId) {
+        return true;
+      }
       if (!formData.nisn || !formData.nis || !formData.kk) {
         await showWarning('Mohon lengkapi data NISN, NIS, dan Nomor KK');
-        return;
+        return false;
       }
       if (!/^\d{10}$/.test(formData.nisn)) {
         await showWarning('NISN harus 10 digit angka.');
-        return;
+        return false;
       }
       if (!/^\d{16}$/.test(formData.kk)) {
         await showWarning('Nomor Kartu Keluarga harus 16 digit angka.');
-        return;
+        return false;
       }
 
       setIsLoading(true);
@@ -185,7 +267,6 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           school_student_id: formData.nis,
           family_registry: formData.kk
         };
-        
         const response = await studentApi.createIdentity(payload);
         const requestId =
           (response as any)?.Id ??
@@ -195,24 +276,27 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
         if (!requestId) {
           await showError('Gagal mendapatkan requestId dari API identitas siswa.');
-          return;
+          return false;
         }
 
+        createdStudentIdRef.current = requestId;
         setCreatedStudentId(requestId);
-        setCurrentStep(prev => prev + 1);
+        return true;
       } catch (error: any) {
         console.error('Failed to create student:', error);
         const errorMessage = error.message || 'Gagal menyimpan data identitas siswa';
         await showError(errorMessage);
-        // Prevent moving to next step on error
-        return;
+        return false;
       } finally {
         setIsLoading(false);
       }
-    } else if (currentStep === 1) {
-      if (!createdStudentId) {
+    }
+
+    if (fromStep === 1) {
+      const requestId = createdStudentIdRef.current ?? createdStudentId;
+      if (!requestId) {
         await showError('ID siswa belum terbentuk. Silakan ulangi dari langkah Identitas Siswa.');
-        return;
+        return false;
       }
 
       if (
@@ -225,32 +309,20 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
         !formData.phone
       ) {
         await showWarning('Mohon lengkapi data pribadi (nama, tempat/tanggal lahir, agama, email, nomor telepon).');
-        return;
+        return false;
       }
-
-      const normalizeDate = (value: string) => {
-        if (!value) return value;
-        if (value.includes('-')) return value;
-        const parts = value.split('/');
-        if (parts.length !== 3) return value;
-        const [dd, mm, yy] = parts;
-        const year = yy.length === 2 ? `20${yy}` : yy;
-        const day = dd.padStart(2, '0');
-        const month = mm.padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
 
       const religionId = Number(formData.religion);
       if (Number.isNaN(religionId)) {
         await showWarning('Agama tidak valid.');
-        return;
+        return false;
       }
 
       const genderId = formData.gender === 'Perempuan' ? 2 : 1;
 
       setIsLoading(true);
       try {
-        await studentApi.updateProfile(createdStudentId, {
+        const payload = {
           first_name: formData.firstName,
           last_name: formData.lastName,
           place_of_birth: formData.birthPlace,
@@ -258,24 +330,56 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           religion_id: religionId,
           gender_id: genderId,
           address: [formData.email, formData.phone],
-        });
+        };
+        const payloadKey = JSON.stringify(payload);
+        if (profilePayloadRef.current === payloadKey) {
+          return true;
+        }
 
-        setCurrentStep(prev => prev + 1);
+        await studentApi.updateProfile(requestId, payload);
+        profilePayloadRef.current = payloadKey;
+        return true;
       } catch (error: any) {
         console.error('Failed to update student profile:', error);
         const errorMessage = error.message || 'Gagal menyimpan data pribadi siswa';
         await showError(errorMessage);
-        return;
+        return false;
       } finally {
         setIsLoading(false);
       }
-    } else if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      // Final Submit logic
-      // Here you would typically update the rest of the student data using the createdStudentId
-      onClose();
     }
+
+    if (fromStep === 2) {
+      return validateAddressStep();
+    }
+
+    return true;
+  };
+
+  const handleStepTabClick = async (targetIndex: number) => {
+    if (targetIndex === currentStep) return;
+    if (targetIndex < currentStep) {
+      setCurrentStep(targetIndex);
+      return;
+    }
+
+    let step = currentStep;
+    while (step < targetIndex) {
+      const ok = await advanceStep(step);
+      if (!ok) return;
+      step += 1;
+    }
+
+    setCurrentStep(targetIndex);
+  };
+
+  const handleNext = async () => {
+    if (currentStep >= STEPS.length - 1) {
+      onClose();
+      return;
+    }
+
+    await handleStepTabClick(currentStep + 1);
   };
 
   const handlePrev = () => {
@@ -326,6 +430,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                     inputMode="numeric"
                     maxLength={10}
                     onChange={(e) => setFormData({...formData, nisn: onlyDigits(e.target.value).slice(0, 10)})}
+                    disabled={!!createdStudentId}
                   />
                 </div>
                 <div>
@@ -336,6 +441,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                     placeholder="Nomor Induk Siswa" 
                     value={formData.nis}
                     onChange={(e) => setFormData({...formData, nis: e.target.value})}
+                    disabled={!!createdStudentId}
                   />
                 </div>
               </div>
@@ -350,6 +456,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   inputMode="numeric"
                   maxLength={16}
                   onChange={(e) => setFormData({...formData, kk: onlyDigits(e.target.value).slice(0, 16)})}
+                  disabled={!!createdStudentId}
                 />
               </div>
             </div>
@@ -560,30 +667,58 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih Provinsi..."
-                  options={[
-                    { value: 'dki_jakarta', label: 'DKI Jakarta' },
-                    { value: 'jawa_barat', label: 'Jawa Barat' },
-                    { value: 'jawa_tengah', label: 'Jawa Tengah' },
-                    { value: 'jawa_timur', label: 'Jawa Timur' },
-                  ]}
+                  options={(regionData.provinces || []).map((p: any) => ({
+                    value: cleanId(p.id),
+                    label: String(p.name),
+                  }))}
                   value={formData.province}
-                  onChange={(e) => setFormData({...formData, province: e.target.value})}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      province: e.target.value,
+                      regency: '',
+                      district: '',
+                      village: '',
+                    }))
+                  }
+                  disabled={isRegionLoading || !!regionError}
                 />
+                {isRegionLoading && (
+                  <p className="text-xs text-neutral-500 mt-1">Memuat data wilayah...</p>
+                )}
+                {!isRegionLoading && regionError && (
+                  <p className="text-xs text-danger-600 mt-1">{regionError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Kabupaten <span className="text-red-500">*</span>
                 </label>
+                {(() => {
+                  const filtered = (regionData.regencies || []).filter(
+                    (r: any) => cleanId(r.province_id) === cleanId(formData.province)
+                  );
+                  const source = filtered.length > 0 ? filtered : (regionData.regencies || []);
+                  return (
                 <Select
                   placeholder="Pilih kabupaten..."
-                  options={[
-                    { value: 'jakarta_selatan', label: 'Jakarta Selatan' },
-                    { value: 'jakarta_pusat', label: 'Jakarta Pusat' },
-                  ]}
+                  options={source.map((r: any) => ({
+                    value: cleanId(r.id),
+                    label: String(r.name),
+                  }))}
                   value={formData.regency}
-                  onChange={(e) => setFormData({...formData, regency: e.target.value})}
-                  disabled={!formData.province}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      regency: e.target.value,
+                      district: '',
+                      village: '',
+                    }))
+                  }
+                  disabled={!formData.province || isRegionLoading || !!regionError}
                 />
+                  );
+                })()}
                 {!formData.province && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih provinsi terlebih dahulu</p>
                 )}
@@ -597,13 +732,21 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih kecamatan..."
-                  options={[
-                    { value: 'tebet', label: 'Tebet' },
-                    { value: 'setiabudi', label: 'Setiabudi' },
-                  ]}
+                  options={(regionData.districts || [])
+                    .filter((d: any) => cleanId(d.regency_id) === cleanId(formData.regency))
+                    .map((d: any) => ({
+                      value: cleanId(d.id),
+                      label: String(d.name),
+                    }))}
                   value={formData.district}
-                  onChange={(e) => setFormData({...formData, district: e.target.value})}
-                  disabled={!formData.regency}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      district: e.target.value,
+                      village: '',
+                    }))
+                  }
+                  disabled={!formData.regency || isRegionLoading || !!regionError}
                 />
                 {!formData.regency && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih kabupaten terlebih dahulu</p>
@@ -615,13 +758,15 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih kelurahan..."
-                  options={[
-                    { value: 'tebet_barat', label: 'Tebet Barat' },
-                    { value: 'tebet_timur', label: 'Tebet Timur' },
-                  ]}
+                  options={(regionData.villages || [])
+                    .filter((v: any) => cleanId(v.DistrictId) === cleanId(formData.district))
+                    .map((v: any) => ({
+                      value: cleanId(v.Id),
+                      label: String(v.Name),
+                    }))}
                   value={formData.village}
                   onChange={(e) => setFormData({...formData, village: e.target.value})}
-                  disabled={!formData.district}
+                  disabled={!formData.district || isRegionLoading || !!regionError}
                 />
                 {!formData.district && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih kecamatan terlebih dahulu</p>
@@ -960,14 +1105,21 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih Provinsi"
-                  options={[
-                    { value: 'dki_jakarta', label: 'DKI Jakarta' },
-                    { value: 'jawa_barat', label: 'Jawa Barat' },
-                    { value: 'jawa_tengah', label: 'Jawa Tengah' },
-                    { value: 'jawa_timur', label: 'Jawa Timur' },
-                  ]}
+                  options={(regionData.provinces || []).map((p: any) => ({
+                    value: cleanId(p.id),
+                    label: String(p.name),
+                  }))}
                   value={formData.parentProvince}
-                  onChange={(e) => setFormData({...formData, parentProvince: e.target.value})}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      parentProvince: e.target.value,
+                      parentRegency: '',
+                      parentDistrict: '',
+                      parentVillage: '',
+                    }))
+                  }
+                  disabled={isRegionLoading || !!regionError}
                 />
               </div>
             </div>
@@ -979,13 +1131,26 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih kabupaten..."
-                  options={[
-                    { value: 'jakarta_selatan', label: 'Jakarta Selatan' },
-                    { value: 'jakarta_pusat', label: 'Jakarta Pusat' },
-                  ]}
+                  options={(() => {
+                    const filtered = (regionData.regencies || []).filter(
+                      (r: any) => cleanId(r.province_id) === cleanId(formData.parentProvince)
+                    );
+                    const source = filtered.length > 0 ? filtered : (regionData.regencies || []);
+                    return source.map((r: any) => ({
+                      value: cleanId(r.id),
+                      label: String(r.name),
+                    }));
+                  })()}
                   value={formData.parentRegency}
-                  onChange={(e) => setFormData({...formData, parentRegency: e.target.value})}
-                  disabled={!formData.parentProvince}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      parentRegency: e.target.value,
+                      parentDistrict: '',
+                      parentVillage: '',
+                    }))
+                  }
+                  disabled={!formData.parentProvince || isRegionLoading || !!regionError}
                 />
                 {!formData.parentProvince && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih provinsi terlebih dahulu</p>
@@ -997,13 +1162,21 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih kecamatan..."
-                  options={[
-                    { value: 'tebet', label: 'Tebet' },
-                    { value: 'setiabudi', label: 'Setiabudi' },
-                  ]}
+                  options={(regionData.districts || [])
+                    .filter((d: any) => cleanId(d.regency_id) === cleanId(formData.parentRegency))
+                    .map((d: any) => ({
+                      value: cleanId(d.id),
+                      label: String(d.name),
+                    }))}
                   value={formData.parentDistrict}
-                  onChange={(e) => setFormData({...formData, parentDistrict: e.target.value})}
-                  disabled={!formData.parentRegency}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      parentDistrict: e.target.value,
+                      parentVillage: '',
+                    }))
+                  }
+                  disabled={!formData.parentRegency || isRegionLoading || !!regionError}
                 />
                 {!formData.parentRegency && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih kabupaten terlebih dahulu</p>
@@ -1018,13 +1191,15 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih kelurahan..."
-                  options={[
-                    { value: 'tebet_barat', label: 'Tebet Barat' },
-                    { value: 'tebet_timur', label: 'Tebet Timur' },
-                  ]}
+                  options={(regionData.villages || [])
+                    .filter((v: any) => cleanId(v.DistrictId) === cleanId(formData.parentDistrict))
+                    .map((v: any) => ({
+                      value: cleanId(v.Id),
+                      label: String(v.Name),
+                    }))}
                   value={formData.parentVillage}
                   onChange={(e) => setFormData({...formData, parentVillage: e.target.value})}
-                  disabled={!formData.parentDistrict}
+                  disabled={!formData.parentDistrict || isRegionLoading || !!regionError}
                 />
                 {!formData.parentDistrict && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih kecamatan terlebih dahulu</p>
@@ -1087,22 +1262,12 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           {STEPS.map((step, index) => (
             <button
               key={step.id}
-              onClick={() => {
-                const unlockedMax = createdStudentId ? STEPS.length - 1 : 0;
-                if (index <= unlockedMax) {
-                  setCurrentStep(index);
-                }
-              }}
+              onClick={() => handleStepTabClick(index)}
               className={cn(
                 "pb-3 text-sm font-medium border-b-2 transition-colors",
-                (() => {
-                  const unlockedMax = createdStudentId ? STEPS.length - 1 : 0;
-                  const isDisabled = index > unlockedMax;
-                  if (isDisabled) return "border-transparent text-neutral-400 pointer-events-none";
-                  return index === currentStep
-                    ? "border-primary-600 text-primary-600"
-                    : "border-transparent text-neutral-500 hover:text-neutral-700";
-                })()
+                index === currentStep
+                  ? "border-primary-600 text-primary-600"
+                  : "border-transparent text-neutral-500 hover:text-neutral-700"
               )}
             >
               {step.label}
