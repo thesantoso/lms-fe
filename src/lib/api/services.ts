@@ -100,6 +100,28 @@ export const studentApi = {
     }
     return apiClient.get<PaginatedResponse<Student>>('/students', { params });
   },
+
+  listIdentity: async (params?: { page?: number; limit?: number }) => {
+    try {
+      const response = await apiClient.get<any>('https://be.themelio.tech/api/v1/student', {
+        params,
+      });
+      return response;
+    } catch (error) {
+      console.error('List Student Identity Error:', error);
+      throw error;
+    }
+  },
+
+  getIdentityById: async (id: string) => {
+    try {
+      const response = await apiClient.get<any>(`https://be.themelio.tech/api/v1/student/${id}`);
+      return response;
+    } catch (error) {
+      console.error('Get Student Identity Error:', error);
+      throw error;
+    }
+  },
   
   getById: (id: string) =>
     apiClient.get<Student>(`/students/${id}`),
@@ -164,6 +186,31 @@ export const studentApi = {
       throw error;
     }
   },
+
+  upsertAddress: async (
+    studentId: string,
+    data: {
+      address_name: string;
+      country_id: string;
+      province_id: string;
+      regency_id: string;
+      district_id: string;
+      village_id: string;
+      postal_code?: string;
+      address: string;
+    }
+  ) => {
+    try {
+      const response = await apiClient.post<any>(
+        `https://be.themelio.tech/api/v1/student/${studentId}/address`,
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error('Upsert Student Address Error:', error);
+      throw error;
+    }
+  },
   
   update: (id: string, data: Partial<Student>) => {
     if (USE_MOCK_API) {
@@ -174,6 +221,99 @@ export const studentApi = {
   
   delete: (id: string) =>
     apiClient.delete(`/students/${id}`),
+};
+
+export const parentApi = {
+  create: async (data: { national_id: string; family_registry: string }) => {
+    try {
+      const response = await apiClient.post<any>('https://be.themelio.tech/api/v1/parent', data);
+      return response;
+    } catch (error) {
+      console.error('Create Parent Error:', error);
+      throw error;
+    }
+  },
+
+  upsertAddress: async (
+    parentId: string,
+    data: {
+      address_name: string;
+      country_id: string;
+      province_id: string;
+      regency_id: string;
+      district_id: string;
+      village_id: string;
+      postal_code?: string;
+      address: string;
+    }
+  ) => {
+    try {
+      const response = await apiClient.post<any>(
+        `https://be.themelio.tech/api/v1/parent/${parentId}/address`,
+        JSON.stringify(data),
+        {
+          headers: { 'Content-Type': 'text/plain' },
+        }
+      );
+      return response;
+    } catch (error) {
+      console.error('Upsert Parent Address Error:', error);
+      throw error;
+    }
+  },
+
+  createContact: async (
+    parentId: string,
+    data: { type: 'EMAIL' | 'PHONE'; name: string; address: string }
+  ) => {
+    try {
+      const response = await apiClient.post<any>(
+        `https://be.themelio.tech/api/v1/parent/${parentId}/contact`,
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error('Create Parent Contact Error:', error);
+      throw error;
+    }
+  },
+
+  updateProfile: async (
+    parentId: string,
+    data: {
+      first_name: string;
+      last_name: string;
+      place_of_birth: string;
+      date_of_birth: string;
+      gender_id: number;
+      religion_id: number;
+      job_category_id: number;
+    }
+  ) => {
+    try {
+      const response = await apiClient.put<any>(
+        `https://be.themelio.tech/api/v1/parent/${parentId}/profile`,
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error('Update Parent Profile Error:', error);
+      throw error;
+    }
+  },
+
+  linkChild: async (parentId: string, data: { student_id: string; family_relation_id: number }) => {
+    try {
+      const response = await apiClient.post<any>(
+        `https://be.themelio.tech/api/v1/parent/${parentId}/child`,
+        data
+      );
+      return response;
+    } catch (error) {
+      console.error('Link Parent Child Error:', error);
+      throw error;
+    }
+  },
 };
 
 // Teacher API
@@ -211,4 +351,8 @@ export const masterApi = {
     apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/district', { params }),
   getVillages: (params?: { page?: number; limit?: number }) =>
     apiClient.get<any>('https://be.themelio.tech/api/v1/master/regency/village', { params }),
+  getSchoolPrograms: () =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/school-programs'),
+  getSchoolGrades: () =>
+    apiClient.get<any>('https://be.themelio.tech/api/v1/master/school-grade'),
 };

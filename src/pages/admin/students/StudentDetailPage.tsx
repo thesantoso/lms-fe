@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -9,60 +10,74 @@ import {
 import Card, { CardBody } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import EditStudentModal from './components/EditStudentModal';
+import { studentApi } from '@/lib/api/services';
 
 const StudentDetailPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Mock data matching the design
-  const student = {
-    id: '1',
-    // Identity
-    nisn: '0012345678',
-    nis: 'SMA001234',
-    kk: '1234567890123456',
-    name: 'Ahmad Rizki Pratama',
-    birthPlace: 'Jakarta',
-    birthDate: '15 Maret 2005',
-    gender: 'Laki-laki',
-    religion: 'Islam',
-    photoUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop', // Placeholder image
+  const { data: studentRes, isLoading, error } = useQuery({
+    queryKey: ['student-identity', id],
+    queryFn: () => studentApi.getIdentityById(String(id)),
+    enabled: !!id,
+  });
 
-    // Address & Contact
-    address: 'Perumahan Resident, Jl. Merdeka No. 123',
-    rt_rw: '05/02',
-    province: 'DKI Jakarta',
-    district: 'Menteng', // Kecamatan
-    subdistrict: 'Gondangdia', // Kelurahan
-    postalCode: '10350',
-    email: 'ahmad.rizki@email.com',
-    phone: '081234567890',
+  const student = useMemo(() => {
+    const s = studentRes?.data;
+    if (!s) return null;
 
-    // Academic
-    major: 'IPA',
-    class: 'XII IPA 1',
-    admissionDate: '15 Juli 2022',
-    semester: 'Ganjil',
-    admissionType: 'Zonasi',
-    batch: '2022',
+    const firstName = String(s.FirstName || '').trim();
+    const lastName = String(s.LastName || '').trim();
+    const fullName =
+      `${firstName} ${lastName}`.trim() ||
+      String(s.SchoolStudentId || s.NationalStudentId || s.Id);
+    const gender = Number(s.GenderId) === 2 ? 'Perempuan' : 'Laki - laki';
+    const birthDateRaw = String(s.DateOfBirth || '');
+    const birthDate = birthDateRaw ? birthDateRaw.slice(0, 10) : '-';
+    const status = Number(s.Status) === 1 ? 'active' : 'inactive';
 
-    // Parent/Guardian
-    parentRole: 'Orang Tua',
-    parentNik: '3171234567890123',
-    parentName: 'Budi Pratama',
-    parentJob: 'Bandar Ayam',
-    parentEmail: 'budi.pratama@email.com',
-    parentPhone: '0811xxxxxxxxxxxx',
-    parentAddress: 'Perumahan Resident, Jl. Merdeka No. 123',
-    parentRtRw: '05/02',
-    parentProvince: 'DKI Jakarta',
-    parentDistrict: 'Menteng',
-    parentSubdistrict: 'Gondangdia',
-    parentPostalCode: '10350',
-
-    status: 'active',
-  };
+    return {
+      id: String(s.Id),
+      nisn: String(s.NationalStudentId || ''),
+      nis: String(s.SchoolStudentId || ''),
+      kk: String(s.FamilyRegistry || ''),
+      name: fullName,
+      birthPlace: String(s.PlaceOfBirth || '-'),
+      birthDate,
+      gender,
+      religion: s.ReligionId ? String(s.ReligionId) : '-',
+      photoUrl:
+        'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop',
+      address: '-',
+      rt_rw: '-',
+      province: '-',
+      district: '-',
+      subdistrict: '-',
+      postalCode: '-',
+      email: '-',
+      phone: '-',
+      major: '-',
+      class: '-',
+      admissionDate: '-',
+      semester: '-',
+      admissionType: '-',
+      batch: '-',
+      parentRole: '-',
+      parentNik: '-',
+      parentName: '-',
+      parentJob: '-',
+      parentEmail: '-',
+      parentPhone: '-',
+      parentAddress: '-',
+      parentRtRw: '-',
+      parentProvince: '-',
+      parentDistrict: '-',
+      parentSubdistrict: '-',
+      parentPostalCode: '-',
+      status,
+    };
+  }, [studentRes?.data]);
 
   const InfoRow = ({ label, value, className = "" }: { label: string, value: string, className?: string }) => (
     <div className={`flex justify-between items-center py-4 border-b border-neutral-100 last:border-0 ${className}`}>
@@ -95,9 +110,11 @@ const StudentDetailPage: React.FC = () => {
           <p className="text-sm text-neutral-500">Informasi lengkap data siswa</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
-            {student.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
-          </span>
+          {student && (
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
+              {student.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
+            </span>
+          )}
           <Button 
             variant="outline" 
             className="border-neutral-200 text-neutral-600 hover:bg-neutral-50"
@@ -109,6 +126,7 @@ const StudentDetailPage: React.FC = () => {
           <Button 
             className="bg-[#2563EB] hover:bg-blue-700 text-white border-none"
             onClick={() => setIsEditModalOpen(true)}
+            disabled={!student}
           >
             <PencilSimple size={18} className="mr-2" />
             Edit
@@ -118,6 +136,14 @@ const StudentDetailPage: React.FC = () => {
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {isLoading && (
+          <div className="lg:col-span-12 text-center py-10 text-neutral-500">Memuat detail siswa...</div>
+        )}
+        {!isLoading && error && (
+          <div className="lg:col-span-12 text-center py-10 text-danger-600">Gagal memuat detail siswa.</div>
+        )}
+        {!isLoading && !error && student && (
+          <>
         
         {/* Row 1: Foto & Identitas */}
         {/* Foto Siswa */}
@@ -215,6 +241,9 @@ const StudentDetailPage: React.FC = () => {
             </CardBody>
           </Card>
         </div>
+
+          </>
+        )}
 
       </div>
 

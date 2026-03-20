@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { 
   User, 
   ArrowRight, 
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import Swal from 'sweetalert2';
 import { teacherApi } from '@/lib/api/services';
 import type { Teacher } from '@/types';
+import { cleanMasterId, useReligionOptions, useRegionMaster } from '@/lib/hooks/useMasterOptions';
 
 interface EditTeacherModalProps {
   isOpen: boolean;
@@ -34,6 +35,8 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
   const [currentStep, setCurrentStep] = useState(0);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { data: religionOptions = [], isLoading: isReligionLoading, error: religionError } = useReligionOptions();
+  const { data: regionMaster, isLoading: isRegionLoading, error: regionError } = useRegionMaster();
 
   const [formData, setFormData] = useState({
     // Identity
@@ -70,6 +73,36 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
     position: '',
     classAssigned: '',
   });
+
+  const provinceOptions = useMemo(
+    () =>
+      (regionMaster?.provinces || []).map((p: any) => ({
+        value: cleanMasterId(p.id),
+        label: String(p.name),
+      })),
+    [regionMaster?.provinces]
+  );
+
+  const regencyOptions = useMemo(() => {
+    const all = regionMaster?.regencies || [];
+    const filtered = all.filter((r: any) => cleanMasterId(r.province_id) === cleanMasterId(formData.province));
+    const source = filtered.length > 0 ? filtered : all;
+    return source.map((r: any) => ({ value: cleanMasterId(r.id), label: String(r.name) }));
+  }, [regionMaster?.regencies, formData.province]);
+
+  const districtOptions = useMemo(() => {
+    const all = regionMaster?.districts || [];
+    return all
+      .filter((d: any) => cleanMasterId(d.regency_id) === cleanMasterId(formData.regency))
+      .map((d: any) => ({ value: cleanMasterId(d.id), label: String(d.name) }));
+  }, [regionMaster?.districts, formData.regency]);
+
+  const villageOptions = useMemo(() => {
+    const all = regionMaster?.villages || [];
+    return all
+      .filter((v: any) => cleanMasterId(v.DistrictId) === cleanMasterId(formData.district))
+      .map((v: any) => ({ value: cleanMasterId(v.Id), label: String(v.Name) }));
+  }, [regionMaster?.villages, formData.district]);
 
   useEffect(() => {
     if (teacher && isOpen) {
@@ -371,17 +404,17 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
               <Select
                 label="Agama *"
                 placeholder="Pilih agama..."
-                options={[
-                  { value: 'islam', label: 'Islam' },
-                  { value: 'kristen', label: 'Kristen' },
-                  { value: 'katolik', label: 'Katolik' },
-                  { value: 'hindu', label: 'Hindu' },
-                  { value: 'buddha', label: 'Buddha' },
-                  { value: 'konghucu', label: 'Konghucu' },
-                ]}
+                options={religionOptions}
                 value={formData.religion}
                 onChange={(e) => setFormData({...formData, religion: e.target.value})}
+                disabled={isReligionLoading || !!religionError}
               />
+              {isReligionLoading && (
+                <p className="text-xs text-neutral-500 mt-1">Memuat data agama...</p>
+              )}
+              {!isReligionLoading && religionError && (
+                <p className="text-xs text-danger-600 mt-1">Gagal memuat data agama</p>
+              )}
             </div>
 
             <div>
@@ -423,26 +456,40 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
               <Select
                 label="Provinsi *"
                 placeholder="Pilih Provinsi..."
-                options={[
-                  { value: 'dki_jakarta', label: 'DKI Jakarta' },
-                  { value: 'jawa_barat', label: 'Jawa Barat' },
-                  { value: 'jawa_tengah', label: 'Jawa Tengah' },
-                  { value: 'jawa_timur', label: 'Jawa Timur' },
-                ]}
+                options={provinceOptions}
                 value={formData.province}
-                onChange={(e) => setFormData({...formData, province: e.target.value})}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    province: e.target.value,
+                    regency: '',
+                    district: '',
+                    village: '',
+                  }))
+                }
+                disabled={isRegionLoading || !!regionError}
               />
+              {isRegionLoading && (
+                <p className="text-xs text-neutral-500 mt-1">Memuat data wilayah...</p>
+              )}
+              {!isRegionLoading && regionError && (
+                <p className="text-xs text-danger-600 mt-1">Gagal memuat data wilayah</p>
+              )}
               <div className="w-full">
                 <Select
                   label="Kabupaten *"
                   placeholder="Pilih kabupaten..."
-                  options={[
-                    { value: 'jakarta_selatan', label: 'Jakarta Selatan' },
-                    { value: 'jakarta_pusat', label: 'Jakarta Pusat' },
-                  ]}
+                  options={regencyOptions}
                   value={formData.regency}
-                  onChange={(e) => setFormData({...formData, regency: e.target.value})}
-                  disabled={!formData.province}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      regency: e.target.value,
+                      district: '',
+                      village: '',
+                    }))
+                  }
+                  disabled={!formData.province || isRegionLoading || !!regionError}
                 />
                 {!formData.province && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih provinsi terlebih dahulu</p>
@@ -455,13 +502,16 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
                 <Select
                   label="Kecamatan *"
                   placeholder="Pilih kecamatan..."
-                  options={[
-                    { value: 'tebet', label: 'Tebet' },
-                    { value: 'setiabudi', label: 'Setiabudi' },
-                  ]}
+                  options={districtOptions}
                   value={formData.district}
-                  onChange={(e) => setFormData({...formData, district: e.target.value})}
-                  disabled={!formData.regency}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      district: e.target.value,
+                      village: '',
+                    }))
+                  }
+                  disabled={!formData.regency || isRegionLoading || !!regionError}
                 />
                 {!formData.regency && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih kabupaten terlebih dahulu</p>
@@ -471,13 +521,10 @@ const EditTeacherModal: React.FC<EditTeacherModalProps> = ({ isOpen, onClose, te
                 <Select
                   label="Kelurahan *"
                   placeholder="Pilih kelurahan..."
-                  options={[
-                    { value: 'tebet_barat', label: 'Tebet Barat' },
-                    { value: 'tebet_timur', label: 'Tebet Timur' },
-                  ]}
+                  options={villageOptions}
                   value={formData.village}
                   onChange={(e) => setFormData({...formData, village: e.target.value})}
-                  disabled={!formData.district}
+                  disabled={!formData.district || isRegionLoading || !!regionError}
                 />
                 {!formData.district && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih kecamatan terlebih dahulu</p>

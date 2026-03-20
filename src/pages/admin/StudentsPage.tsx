@@ -57,21 +57,33 @@ const StudentsPage: React.FC = () => {
 
   const { data: studentsData, isLoading } = useQuery({
     queryKey: ['students', currentSchool?.id],
-    queryFn: () => studentApi.getAll({ schoolId: currentSchool?.id, perPage: 100 }),
+    queryFn: () => studentApi.listIdentity({ page: 0, limit: 1000 }),
     enabled: !!currentSchool,
   });
 
   // Mock data enhancement
-  const students: StudentWithDetails[] = (studentsData?.data || []).map((s, index) => {
+  const students: StudentWithDetails[] = (studentsData?.data || []).map((s: any, index: number) => {
+    const firstName = String(s.FirstName || '').trim();
+    const lastName = String(s.LastName || '').trim();
+    const fullName = `${firstName} ${lastName}`.trim() || String(s.SchoolStudentId || s.NationalStudentId || s.Id);
+    const statusRaw = String(s.Status || '').toLowerCase();
+    const mappedStatus =
+      statusRaw === 'active' ? 'active' : statusRaw === 'inactive' ? 'inactive' : 'active';
+
     // Apply local status override if exists
-    const currentStatus = localStatusUpdates[s.id] || s.status;
+    const currentStatus = localStatusUpdates[String(s.Id)] || mappedStatus;
     
     return {
-      ...s,
+      id: String(s.Id),
+      schoolId: currentSchool?.id || '',
+      name: fullName,
+      email: '',
+      enrollmentDate: '',
       status: currentStatus as 'active' | 'inactive' | 'graduated',
-      nisn: `004738${2916 + index}`,
+      nisn: String(s.NationalStudentId || ''),
       batch: index % 2 === 0 ? '2024' : '2023',
-      className: index % 3 === 0 ? '10 MIPA 1' : (index % 3 === 1 ? '11 IPS 2' : '12 MIPA 3'),
+      className: String(s.Classes || 'NOT REGISTERED'),
+      courses: [],
     };
   });
 
@@ -81,7 +93,7 @@ const StudentsPage: React.FC = () => {
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (student.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.nisn.includes(searchTerm);
     
     const matchesStatus = filters.status ? student.status === filters.status : true;

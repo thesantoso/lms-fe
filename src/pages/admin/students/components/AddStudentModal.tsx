@@ -5,7 +5,7 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import { cn } from '@/lib/utils';
-import { masterApi, studentApi } from '@/lib/api/services';
+import { masterApi, parentApi, studentApi } from '@/lib/api/services';
 import Swal from 'sweetalert2';
 
 interface AddStudentModalProps {
@@ -27,9 +27,21 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const [createdStudentId, setCreatedStudentId] = useState<string | null>(null);
   const createdStudentIdRef = useRef<string | null>(null);
   const profilePayloadRef = useRef<string | null>(null);
+  const addressPayloadRef = useRef<string | null>(null);
+  const addressRequestIdRef = useRef<string | null>(null);
+  const parentIdRef = useRef<string | null>(null);
+  const parentPayloadRef = useRef<string | null>(null);
+  const parentAddressPayloadRef = useRef<string | null>(null);
+  const parentContactPayloadRef = useRef<string | null>(null);
+  const parentProfilePayloadRef = useRef<string | null>(null);
+  const parentChildPayloadRef = useRef<string | null>(null);
   const [religionOptions, setReligionOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [isReligionLoading, setIsReligionLoading] = useState(false);
   const [religionError, setReligionError] = useState<string | null>(null);
+  const [programOptions, setProgramOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [gradeOptions, setGradeOptions] = useState<Array<{ value: string; label: string }>>([]);
+  const [isAcademicMasterLoading, setIsAcademicMasterLoading] = useState(false);
+  const [academicMasterError, setAcademicMasterError] = useState<string | null>(null);
   const [regionData, setRegionData] = useState<{
     provinces: Array<any>;
     regencies: Array<any>;
@@ -59,6 +71,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     religion: '',
     
     // Address & Contact
+    addressName: '',
     address: '',
     rt: '',
     rw: '',
@@ -89,10 +102,15 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     // Parent / Guardian
     parentType: 'orang_tua',
     parentNik: '',
+    parentFamilyRegistry: '',
     parentName: '',
     parentPhone: '',
     parentJob: '',
     parentEmail: '',
+    parentBirthPlace: '',
+    parentBirthDate: '',
+    parentGender: 'Laki - laki',
+    parentReligion: '',
     parentAddress: '',
     parentRtRw: '',
     parentProvince: '',
@@ -175,6 +193,44 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
   useEffect(() => {
     if (!isOpen) return;
+    if (programOptions.length > 0 && gradeOptions.length > 0) return;
+
+    let cancelled = false;
+    const run = async () => {
+      setIsAcademicMasterLoading(true);
+      setAcademicMasterError(null);
+      try {
+        const [programRes, gradeRes] = await Promise.all([
+          masterApi.getSchoolPrograms(),
+          masterApi.getSchoolGrades(),
+        ]);
+        const programs = (programRes?.data || []).map((p: any) => ({
+          value: String(p.name),
+          label: String(p.name),
+        }));
+        const grades = (gradeRes?.data || []).map((g: any) => ({
+          value: String(g.grade),
+          label: String(g.grade),
+        }));
+
+        if (cancelled) return;
+        setProgramOptions(programs);
+        setGradeOptions(grades);
+      } catch (err: any) {
+        if (!cancelled) setAcademicMasterError(err?.message || 'Gagal memuat data akademik');
+      } finally {
+        if (!cancelled) setIsAcademicMasterLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, programOptions.length, gradeOptions.length]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     if (regionData.regencies.length > 0) return;
 
     let cancelled = false;
@@ -228,6 +284,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
   const validateAddressStep = async () => {
     if (
+      !formData.addressName ||
       !formData.address ||
       !formData.rt ||
       !formData.rw ||
@@ -236,9 +293,65 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
       !formData.district ||
       !formData.village
     ) {
-      await showWarning('Mohon lengkapi data alamat (alamat, RT, RW, provinsi, kabupaten, kecamatan, kelurahan).');
+      await showWarning('Mohon lengkapi data alamat (nama alamat, alamat, RT, RW, provinsi, kabupaten, kecamatan, kelurahan).');
       return false;
     }
+    return true;
+  };
+
+  const validateAcademicStep = async () => {
+    if (
+      !formData.class ||
+      !formData.major ||
+      !formData.dateAccepted ||
+      !formData.semester ||
+      !formData.admissionPath ||
+      !formData.cohortYear
+    ) {
+      await showWarning('Mohon lengkapi data akademik (kelas, jurusan, tanggal diterima, semester masuk, jalur masuk, tahun angkatan).');
+      return false;
+    }
+    return true;
+  };
+
+  const validateParentsStep = async () => {
+    const isWali = formData.parentType === 'wali';
+
+    if (
+      !formData.parentNik ||
+      !formData.parentFamilyRegistry ||
+      !formData.parentName ||
+      !formData.parentBirthPlace ||
+      !formData.parentBirthDate ||
+      !formData.parentReligion ||
+      !formData.parentPhone ||
+      !formData.parentEmail ||
+      !formData.parentAddress ||
+      !formData.parentRtRw ||
+      !formData.parentProvince ||
+      !formData.parentRegency ||
+      !formData.parentDistrict ||
+      !formData.parentVillage
+    ) {
+      await showWarning('Mohon lengkapi data orang tua/wali (NIK, no KK, nama, tempat/tanggal lahir, agama, nomor telepon, email, alamat, RT/RW, provinsi, kabupaten, kecamatan, kelurahan).');
+      return false;
+    }
+
+    if (!/^\d{16}$/.test(onlyDigits(formData.parentNik))) {
+      await showWarning('NIK orang tua/wali harus 16 digit angka.');
+      return false;
+    }
+
+    if (!/^\d{16}$/.test(onlyDigits(formData.parentFamilyRegistry))) {
+      await showWarning('Nomor Kartu Keluarga orang tua/wali harus 16 digit angka.');
+      return false;
+    }
+
+    if (isWali && !formData.guardianRelationship) {
+      await showWarning('Mohon pilih hubungan wali dengan siswa.');
+      return false;
+    }
+
     return true;
   };
 
@@ -280,6 +393,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
         }
 
         createdStudentIdRef.current = requestId;
+        addressRequestIdRef.current = requestId;
         setCreatedStudentId(requestId);
         return true;
       } catch (error: any) {
@@ -350,7 +464,193 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     }
 
     if (fromStep === 2) {
-      return validateAddressStep();
+      const addressRequestId = addressRequestIdRef.current;
+      if (!addressRequestId) {
+        await showError('RequestId untuk alamat belum tersedia. Silakan simpan Identitas Siswa terlebih dahulu.');
+        return false;
+      }
+
+      const ok = await validateAddressStep();
+      if (!ok) return false;
+
+      const selectedRegency = (regionData.regencies || []).find(
+        (r: any) => cleanId(r.id) === cleanId(formData.regency)
+      );
+      const derivedProvinceId = cleanId(selectedRegency?.province_id);
+      const provinceId =
+        cleanId(formData.province) && cleanId(formData.province) !== '10'
+          ? cleanId(formData.province)
+          : derivedProvinceId || cleanId(formData.province);
+
+      const payload = {
+        address_name: formData.addressName,
+        country_id: '10',
+        province_id: provinceId,
+        regency_id: cleanId(formData.regency),
+        district_id: cleanId(formData.district),
+        village_id: cleanId(formData.village),
+        postal_code: formData.postalCode || undefined,
+        address: formData.address,
+      };
+
+      const payloadKey = JSON.stringify(payload);
+      if (addressPayloadRef.current === payloadKey) {
+        return true;
+      }
+
+      setIsLoading(true);
+      try {
+        await studentApi.upsertAddress(addressRequestId, payload);
+        addressPayloadRef.current = payloadKey;
+        return true;
+      } catch (error: any) {
+        console.error('Failed to upsert student address:', error);
+        const errorMessage = error.message || 'Gagal menyimpan data alamat siswa';
+        await showError(errorMessage);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (fromStep === 3) {
+      return validateAcademicStep();
+    }
+
+    if (fromStep === 4) {
+      const ok = await validateParentsStep();
+      if (!ok) return false;
+
+      const studentId = createdStudentIdRef.current ?? createdStudentId;
+      if (!studentId) {
+        await showError('ID siswa belum terbentuk. Silakan simpan Identitas Siswa terlebih dahulu.');
+        return false;
+      }
+
+      const parentCreatePayload = {
+        national_id: onlyDigits(formData.parentNik),
+        family_registry: onlyDigits(formData.parentFamilyRegistry),
+      };
+      const parentCreateKey = JSON.stringify(parentCreatePayload);
+
+      setIsLoading(true);
+      try {
+        if (!parentIdRef.current || parentPayloadRef.current !== parentCreateKey) {
+          const parentRes = await parentApi.create(parentCreatePayload);
+          const parentId =
+            (parentRes as any)?.Id ??
+            (parentRes as any)?.id ??
+            (parentRes as any)?.data?.Id ??
+            (parentRes as any)?.data?.id;
+
+          if (!parentId) {
+            await showError('Gagal mendapatkan parentId dari API parent.');
+            return false;
+          }
+
+          parentIdRef.current = String(parentId).trim();
+          parentPayloadRef.current = parentCreateKey;
+        }
+
+        const parentId = parentIdRef.current;
+        if (!parentId) return false;
+
+        const selectedRegency = (regionData.regencies || []).find(
+          (r: any) => cleanId(r.id) === cleanId(formData.parentRegency)
+        );
+        const derivedProvinceId = cleanId(selectedRegency?.province_id);
+        const provinceId =
+          cleanId(formData.parentProvince) && cleanId(formData.parentProvince) !== '10'
+            ? cleanId(formData.parentProvince)
+            : derivedProvinceId || cleanId(formData.parentProvince);
+
+        const parentAddressPayload = {
+          address_name: formData.parentType === 'wali' ? 'Wali' : 'Orang Tua',
+          country_id: '10',
+          province_id: provinceId,
+          regency_id: cleanId(formData.parentRegency),
+          district_id: cleanId(formData.parentDistrict),
+          village_id: cleanId(formData.parentVillage),
+          postal_code: formData.parentPostalCode || undefined,
+          address: `${formData.parentAddress}\n${formData.parentRtRw}`,
+        };
+        const parentAddressKey = JSON.stringify(parentAddressPayload);
+        if (parentAddressPayloadRef.current !== parentAddressKey) {
+          await parentApi.upsertAddress(parentId, parentAddressPayload);
+          parentAddressPayloadRef.current = parentAddressKey;
+        }
+
+        const parentContactKey = JSON.stringify({
+          email: formData.parentEmail,
+          phone: formData.parentPhone,
+        });
+        if (parentContactPayloadRef.current !== parentContactKey) {
+          await parentApi.createContact(parentId, {
+            type: 'EMAIL',
+            name: 'PRIVATE.EMAIL',
+            address: formData.parentEmail,
+          });
+          await parentApi.createContact(parentId, {
+            type: 'PHONE',
+            name: 'PRIVATE.PHONE',
+            address: formData.parentPhone,
+          });
+          parentContactPayloadRef.current = parentContactKey;
+        }
+
+        const [firstName, ...rest] = formData.parentName.trim().split(/\s+/);
+        const lastName = rest.join(' ');
+        const genderId = formData.parentGender === 'Perempuan' ? 2 : 1;
+        const religionId = Number(formData.parentReligion);
+        if (Number.isNaN(religionId)) {
+          await showWarning('Agama orang tua/wali tidak valid.');
+          return false;
+        }
+        const jobCategoryId = (() => {
+          const mapping: Record<string, number> = {
+            pns: 1,
+            swasta: 2,
+            wiraswasta: 3,
+            tni_polri: 4,
+            petani: 5,
+            nelayan: 6,
+            lainnya: 7,
+          };
+          return mapping[formData.parentJob] || 1;
+        })();
+
+        const parentProfilePayload = {
+          first_name: firstName || formData.parentName,
+          last_name: lastName,
+          place_of_birth: formData.parentBirthPlace,
+          date_of_birth: normalizeDate(formData.parentBirthDate),
+          gender_id: genderId,
+          religion_id: religionId,
+          job_category_id: jobCategoryId,
+        };
+        const parentProfileKey = JSON.stringify(parentProfilePayload);
+        if (parentProfilePayloadRef.current !== parentProfileKey) {
+          await parentApi.updateProfile(parentId, parentProfilePayload);
+          parentProfilePayloadRef.current = parentProfileKey;
+        }
+
+        const familyRelationId = formData.parentType === 'wali' ? 1 : 0;
+        const parentChildPayload = { student_id: studentId, family_relation_id: familyRelationId };
+        const parentChildKey = JSON.stringify(parentChildPayload);
+        if (parentChildPayloadRef.current !== parentChildKey) {
+          await parentApi.linkChild(parentId, parentChildPayload);
+          parentChildPayloadRef.current = parentChildKey;
+        }
+
+        return true;
+      } catch (error: any) {
+        console.error('Failed to save parent data:', error);
+        const errorMessage = error.message || 'Gagal menyimpan data orang tua/wali';
+        await showError(errorMessage);
+        return false;
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     return true;
@@ -375,6 +675,8 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
   const handleNext = async () => {
     if (currentStep >= STEPS.length - 1) {
+      const ok = await advanceStep(currentStep);
+      if (!ok) return;
       onClose();
       return;
     }
@@ -633,12 +935,12 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                  Alamat <span className="text-red-500">*</span>
+                  Nama Alamat <span className="text-red-500">*</span>
                 </label>
                 <Input 
-                  placeholder="Nama jalan, nomor rumah, blok, detail tambahan" 
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                  placeholder="Contoh: Rumah, Domisili, Kos"
+                  value={formData.addressName}
+                  onChange={(e) => setFormData({...formData, addressName: e.target.value})}
                 />
               </div>
               <div>
@@ -661,6 +963,16 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Alamat <span className="text-red-500">*</span>
+                </label>
+                <Input 
+                  placeholder="Nama jalan, nomor rumah, blok, detail tambahan" 
+                  value={formData.address}
+                  onChange={(e) => setFormData({...formData, address: e.target.value})}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Provinsi <span className="text-red-500">*</span>
@@ -690,6 +1002,9 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   <p className="text-xs text-danger-600 mt-1">{regionError}</p>
                 )}
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Kabupaten <span className="text-red-500">*</span>
@@ -700,28 +1015,38 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   );
                   const source = filtered.length > 0 ? filtered : (regionData.regencies || []);
                   return (
-                <Select
-                  placeholder="Pilih kabupaten..."
-                  options={source.map((r: any) => ({
-                    value: cleanId(r.id),
-                    label: String(r.name),
-                  }))}
-                  value={formData.regency}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      regency: e.target.value,
-                      district: '',
-                      village: '',
-                    }))
-                  }
-                  disabled={!formData.province || isRegionLoading || !!regionError}
-                />
+                    <Select
+                      placeholder="Pilih kabupaten..."
+                      options={source.map((r: any) => ({
+                        value: cleanId(r.id),
+                        label: String(r.name),
+                      }))}
+                      value={formData.regency}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          regency: e.target.value,
+                          district: '',
+                          village: '',
+                        }))
+                      }
+                      disabled={!formData.province || isRegionLoading || !!regionError}
+                    />
                   );
                 })()}
                 {!formData.province && (
                   <p className="text-xs text-neutral-500 mt-1">Pilih provinsi terlebih dahulu</p>
                 )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Kode Pos
+                </label>
+                <Input 
+                  placeholder="contoh: 12345" 
+                  value={formData.postalCode}
+                  onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
+                />
               </div>
             </div>
 
@@ -773,19 +1098,6 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 )}
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
-                  Kode Pos
-                </label>
-                <Input 
-                  placeholder="contoh: 12345" 
-                  value={formData.postalCode}
-                  onChange={(e) => setFormData({...formData, postalCode: e.target.value})}
-                />
-              </div>
-            </div>
           </div>
         );
       case 3: // Data Akademik
@@ -798,14 +1110,17 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih kelas siswa..."
-                  options={[
-                    { value: '10', label: '10' },
-                    { value: '11', label: '11' },
-                    { value: '12', label: '12' },
-                  ]}
+                  options={gradeOptions}
                   value={formData.class}
                   onChange={(e) => setFormData({...formData, class: e.target.value})}
+                  disabled={isAcademicMasterLoading || !!academicMasterError}
                 />
+                {isAcademicMasterLoading && (
+                  <p className="text-xs text-neutral-500 mt-1">Memuat data akademik...</p>
+                )}
+                {!isAcademicMasterLoading && academicMasterError && (
+                  <p className="text-xs text-danger-600 mt-1">{academicMasterError}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
@@ -813,13 +1128,10 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </label>
                 <Select
                   placeholder="Pilih jurusan siswa..."
-                  options={[
-                    { value: 'ipa', label: 'IPA' },
-                    { value: 'ips', label: 'IPS' },
-                    { value: 'bahasa', label: 'Bahasa' },
-                  ]}
+                  options={programOptions}
                   value={formData.major}
                   onChange={(e) => setFormData({...formData, major: e.target.value})}
+                  disabled={isAcademicMasterLoading || !!academicMasterError}
                 />
               </div>
             </div>
@@ -830,7 +1142,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   Tanggal Diterima <span className="text-red-500">*</span>
                 </label>
                 <Input 
-                  placeholder="dd/mm/yy" 
+                  type="date"
                   value={formData.dateAccepted}
                   onChange={(e) => setFormData({...formData, dateAccepted: e.target.value})}
                   rightIcon={<Calendar size={20} className="text-neutral-400" />}
@@ -1023,6 +1335,21 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Nomor Kartu Keluarga <span className="text-red-500">*</span>
+                </label>
+                <Input 
+                  placeholder="16 digit nomor KK"
+                  value={formData.parentFamilyRegistry}
+                  inputMode="numeric"
+                  maxLength={16}
+                  onChange={(e) => setFormData({...formData, parentFamilyRegistry: onlyDigits(e.target.value).slice(0, 16)})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
                   Nama Lengkap {labelSuffix} <span className="text-red-500">*</span>
                 </label>
                 <Input 
@@ -1030,6 +1357,94 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                   value={formData.parentName}
                   onChange={(e) => setFormData({...formData, parentName: e.target.value})}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Tempat Lahir {labelSuffix} <span className="text-red-500">*</span>
+                </label>
+                <Input 
+                  placeholder="Kota tempat lahir"
+                  value={formData.parentBirthPlace}
+                  onChange={(e) => setFormData({...formData, parentBirthPlace: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Tanggal Lahir {labelSuffix} <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="date"
+                  value={formData.parentBirthDate}
+                  onChange={(e) => setFormData({...formData, parentBirthDate: e.target.value})}
+                  rightIcon={<Calendar size={20} className="text-neutral-400" />}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">
+                  Agama {labelSuffix} <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  placeholder="Pilih agama..."
+                  options={religionOptions}
+                  value={formData.parentReligion}
+                  onChange={(e) => setFormData({...formData, parentReligion: e.target.value})}
+                  disabled={isReligionLoading || !!religionError}
+                />
+                {isReligionLoading && (
+                  <p className="text-xs text-neutral-500 mt-1">Memuat data agama...</p>
+                )}
+                {!isReligionLoading && religionError && (
+                  <p className="text-xs text-danger-600 mt-1">{religionError}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Jenis Kelamin {labelSuffix} <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center gap-6 mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border flex items-center justify-center",
+                      formData.parentGender === 'Laki - laki' ? "border-[#2563EB]" : "border-neutral-300"
+                    )}>
+                      {formData.parentGender === 'Laki - laki' && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
+                      )}
+                    </div>
+                    <input 
+                      type="radio" 
+                      name="parentGender" 
+                      className="hidden" 
+                      checked={formData.parentGender === 'Laki - laki'}
+                      onChange={() => setFormData({...formData, parentGender: 'Laki - laki'})}
+                    />
+                    <span className="text-sm text-neutral-700">Laki - laki</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <div className={cn(
+                      "w-5 h-5 rounded-full border flex items-center justify-center",
+                      formData.parentGender === 'Perempuan' ? "border-[#2563EB]" : "border-neutral-300"
+                    )}>
+                      {formData.parentGender === 'Perempuan' && (
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
+                      )}
+                    </div>
+                    <input 
+                      type="radio" 
+                      name="parentGender" 
+                      className="hidden" 
+                      checked={formData.parentGender === 'Perempuan'}
+                      onChange={() => setFormData({...formData, parentGender: 'Perempuan'})}
+                    />
+                    <span className="text-sm text-neutral-700">Perempuan</span>
+                  </label>
+                </div>
               </div>
             </div>
 
