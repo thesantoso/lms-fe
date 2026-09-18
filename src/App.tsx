@@ -28,6 +28,10 @@ import ClassesPage from './pages/admin/master/ClassesPage';
 import ClassDetailPage from './pages/admin/master/ClassDetailPage';
 import SubjectsPage from './pages/admin/master/SubjectsPage';
 import SubjectDetailPage from './pages/admin/master/SubjectDetailPage';
+import SchedulesPage from './pages/admin/master/SchedulesPage';
+import ScheduleDetailPage from './pages/admin/master/ScheduleDetailPage';
+import AuthzUsersPage from './pages/admin/authz/UsersPage';
+import AuthzGroupsPage from './pages/admin/authz/GroupsPage';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -83,6 +87,12 @@ const App: React.FC = () => {
                 <Route path="master/classes/:id" element={<ClassDetailPage />} />
                 <Route path="master/subjects" element={<SubjectsPage />} />
                 <Route path="master/subjects/:id" element={<SubjectDetailPage />} />
+                <Route path="master/schedules" element={<SchedulesPage />} />
+                <Route path="master/schedules/:classId" element={<ScheduleDetailPage />} />
+
+                {/* Autentikasi & Otorisasi (RBAC) */}
+                <Route path="auth/users" element={<AuthzUsersPage />} />
+                <Route path="auth/groups" element={<AuthzGroupsPage />} />
                 
                 <Route path="schools" element={<div className="text-center py-8">Schools page coming soon</div>} />
                 <Route path="settings" element={<div className="text-center py-8">Settings page coming soon</div>} />

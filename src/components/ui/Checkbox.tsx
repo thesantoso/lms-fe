@@ -12,7 +12,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const checkboxId = id || (label ? `checkbox-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined);
 
     return (
-      <div className="inline-flex items-center gap-2">
+      <div className="inline-flex items-center gap-2.5">
         <div className="relative flex items-center justify-center">
           <input
             type="checkbox"

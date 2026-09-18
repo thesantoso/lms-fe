@@ -92,6 +92,34 @@ export interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+// ── Autentikasi & Otorisasi (RBAC: user & group management) ──────────────────
+
+export interface PermissionNode {
+  label: string;
+  value: string;
+  children?: PermissionNode[];
+}
+
+export interface AuthGroup {
+  id: string;
+  key: string;
+  name: string;
+  permissions: string[]; // flattened permission values
+}
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  roles: string[]; // group ids
+  default_password: boolean;
+  password?: string;
+  last_login?: string;
+  date_join?: string;
+}
+
 export interface TenantContextType {
   currentSchool: School | null;
   schools: School[];

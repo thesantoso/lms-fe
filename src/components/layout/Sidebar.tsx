@@ -76,6 +76,16 @@ const Sidebar: React.FC = () => {
                 children: [
                   { type: 'link', to: '/admin/master/classes', label: 'Kelas' },
                   { type: 'link', to: '/admin/master/subjects', label: 'Mata Pelajaran' },
+                  { type: 'link', to: '/admin/master/schedules', label: 'Jadwal' },
+                ]
+              },
+              {
+                type: 'menu',
+                label: 'Autentikasi & Otorisasi',
+                icon: ShieldCheck,
+                children: [
+                  { type: 'link', to: '/admin/auth/users', label: 'User' },
+                  { type: 'link', to: '/admin/auth/groups', label: 'Group' },
                 ]
               }
             ]

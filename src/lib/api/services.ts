@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 import { mockApi } from './mock';
-import type { User, School, Course, Student, Teacher, PaginatedResponse } from '@/types';
+import type { User, School, Course, Student, Teacher, PaginatedResponse, AuthGroup, AuthUser } from '@/types';
+import { authzStore } from '@/data/authData';
 
 // Flag to use mock API when backend is not available
 const USE_MOCK_API = true;
@@ -8,25 +9,23 @@ const USE_MOCK_API = true;
 // Auth API
 export const authApi = {
   login: async (email: string, password: string) => {
-    // Direct integration with the specified API endpoint
+    if (USE_MOCK_API) {
+      return mockApi.login(email, password);
+    }
+
     try {
-      const response = await apiClient.post<any>('https://be.themelio.tech/api/v1/staff/auth/login', { 
-        username: email, // Mapping email input to username as requested
-        password 
+      const response = await apiClient.post<any>('https://be.themelio.tech/api/v1/staff/auth/login', {
+        username: email,
+        password
       });
 
-      // Adapt the response to the application's User type
-      // Assuming the API returns a token and potentially user details
-      // We map it to the expected structure
-      
-      // Note: Adjust this mapping based on the actual API response structure
       const token = response.token || response.data?.token || 'session-token';
-      
+
       const user: User = {
         id: response.user?.id || 'user-id',
         email: email,
         name: response.user?.name || email,
-        role: 'admin', // Defaulting to admin to ensure access to dashboard
+        role: 'admin',
         schoolIds: ['school-1'],
         avatar: response.user?.avatar
       };
@@ -37,15 +36,33 @@ export const authApi = {
       throw error;
     }
   },
-  
+
   logout: () =>
     apiClient.post('/auth/logout'),
-  
+
   getCurrentUser: () =>
     apiClient.get<User>('/auth/me'),
-  
+
   refreshToken: () =>
     apiClient.post<{ token: string }>('/auth/refresh'),
+};
+
+// Authz API — Autentikasi & Otorisasi (User & Group management, in-memory mock)
+const mockDelay = <T,>(data: T): Promise<T> =>
+  new Promise((resolve) => setTimeout(() => resolve(JSON.parse(JSON.stringify(data))), 400));
+
+export const authzApi = {
+  getUsers: () => mockDelay(authzStore.getUsers()),
+  getGroups: () => mockDelay(authzStore.getGroups()),
+  getPermissions: () => mockDelay(authzStore.getPermissionTree()),
+
+  createUser: (data: Omit<AuthUser, 'id'>) => mockDelay(authzStore.createUser(data)),
+  updateUser: (id: string, data: Partial<AuthUser>) => mockDelay(authzStore.updateUser(id, data)),
+  deleteUser: (id: string) => mockDelay(authzStore.deleteUser(id)),
+
+  createGroup: (data: Omit<AuthGroup, 'id'>) => mockDelay(authzStore.createGroup(data)),
+  updateGroup: (id: string, data: Partial<AuthGroup>) => mockDelay(authzStore.updateGroup(id, data)),
+  deleteGroup: (id: string) => mockDelay(authzStore.deleteGroup(id)),
 };
 
 // School API
