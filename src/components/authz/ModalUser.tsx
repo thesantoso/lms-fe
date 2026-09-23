@@ -69,7 +69,7 @@ const ModalUser: React.FC<ModalUserProps> = ({
     else if (form.password && form.password.length < 8) errs.password = 'Password minimal 8 karakter.';
     if (form.password !== form.password_confirmation) errs.password_confirmation = 'Konfirmasi password tidak cocok.';
 
-    if (selectedRoles.length === 0) errs.roles = 'Pilih minimal satu group.';
+    if (selectedRoles.length === 0) errs.roles = 'Pilih minimal satu grup.';
 
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
@@ -88,7 +88,7 @@ const ModalUser: React.FC<ModalUserProps> = ({
     });
   };
 
-  const title = mode === 'create' ? 'Tambah User' : 'Edit User';
+  const title = mode === 'create' ? 'Tambah School Tenant' : 'Edit School Tenant';
 
   return (
     <Modal isOpen onClose={onClose} title={title} size="lg" subtitle="Kelola akun pengguna sistem">
@@ -157,7 +157,7 @@ const ModalUser: React.FC<ModalUserProps> = ({
         {/* Group assignment */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-2">
-            Group (Hak Akses) *
+            Grup (Hak Akses) *
           </label>
           <div className="border border-neutral-200 rounded-lg p-4 space-y-3 max-h-52 overflow-y-auto">
             {groups.map((group) => (
@@ -169,7 +169,7 @@ const ModalUser: React.FC<ModalUserProps> = ({
               />
             ))}
             {groups.length === 0 && (
-              <p className="text-sm text-neutral-400 italic">Belum ada group. Buat group terlebih dahulu.</p>
+              <p className="text-sm text-neutral-400 italic">Belum ada grup. Buat grup terlebih dahulu.</p>
             )}
           </div>
           {errors.roles && <p className="mt-1 text-sm text-danger-600">{errors.roles}</p>}
@@ -179,7 +179,7 @@ const ModalUser: React.FC<ModalUserProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-neutral-500 font-medium mb-1">Terakhir Login</p>
-              <p className="text-neutral-900">{user?.last_login || 'User belum pernah login.'}</p>
+              <p className="text-neutral-900">{user?.last_login || 'Belum pernah login.'}</p>
             </div>
             <div>
               <p className="text-neutral-500 font-medium mb-1">Tanggal Bergabung</p>

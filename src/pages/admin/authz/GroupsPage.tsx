@@ -7,7 +7,6 @@ import {
   CaretDown,
   CaretLeft,
   CaretRight,
-  UsersThree,
   ShieldCheck,
   PencilSimple,
 } from '@phosphor-icons/react';
@@ -100,7 +99,7 @@ const GroupsPage: React.FC = () => {
       else await authzApi.createGroup(data);
       await load();
       setModal((m) => ({ ...m, open: false }));
-      setNotice(data.id ? 'Group berhasil diperbarui!' : 'Group berhasil dibuat!');
+      setNotice(data.id ? 'Grup berhasil diperbarui!' : 'Grup berhasil dibuat!');
     } finally {
       setSaving(false);
     }
@@ -113,7 +112,7 @@ const GroupsPage: React.FC = () => {
       await load();
       setSelectedIds(new Set());
       setConfirmDialog({ open: false, ids: [] });
-      setNotice(`${ids.length} group berhasil dihapus!`);
+      setNotice(`${ids.length} grup berhasil dihapus!`);
     } finally {
       setLoading(false);
     }
@@ -137,15 +136,13 @@ const GroupsPage: React.FC = () => {
       {/* Page Header */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <UsersThree size={28} className="text-neutral-500" />
-          <h1 className="text-2xl font-bold text-neutral-600">Autentikasi & Otorisasi</h1>
+          <ShieldCheck size={28} className="text-neutral-500" />
+          <h1 className="text-2xl font-bold text-neutral-600">Autentikasi</h1>
         </div>
         <div className="flex items-center text-sm text-neutral-500">
           <span className="hover:text-blue-600 cursor-pointer">Dasbor</span>
           <CaretRight size={12} className="mx-2" />
-          <span className="hover:text-blue-600 cursor-pointer">Autentikasi & Otorisasi</span>
-          <CaretRight size={12} className="mx-2" />
-          <span className="text-blue-600 font-medium">Group</span>
+          <span className="text-blue-600 font-medium">Grup</span>
         </div>
       </div>
 
@@ -159,7 +156,7 @@ const GroupsPage: React.FC = () => {
         <CardBody className="p-6">
           {/* Header & Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <h2 className="text-xl font-bold text-neutral-900">Group</h2>
+            <h2 className="text-xl font-bold text-neutral-900">Grup</h2>
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
@@ -175,7 +172,7 @@ const GroupsPage: React.FC = () => {
                 onClick={openCreate}
               >
                 <Plus size={20} weight="bold" className="mr-2" />
-                Tambah Group
+                Tambah Grup
               </Button>
             </div>
           </div>
@@ -198,7 +195,7 @@ const GroupsPage: React.FC = () => {
             </div>
             <div className="w-full sm:w-72">
               <Input
-                placeholder="Cari group..."
+                placeholder="Cari grup..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -219,7 +216,7 @@ const GroupsPage: React.FC = () => {
                     <Checkbox checked={isAllSelected} onChange={(e) => toggleSelectAll(e.target.checked)} />
                   </th>
                   <th className="px-4 py-3 text-sm font-bold text-neutral-800">
-                    <span className="flex items-center gap-1 cursor-pointer hover:text-blue-600">Nama Group <SortIcon /></span>
+                    <span className="flex items-center gap-1 cursor-pointer hover:text-blue-600">Nama Grup <SortIcon /></span>
                   </th>
                   <th className="px-4 py-3 text-sm font-bold text-neutral-800">
                     <span className="flex items-center gap-1 cursor-pointer hover:text-blue-600">Key <SortIcon /></span>
@@ -285,7 +282,7 @@ const GroupsPage: React.FC = () => {
                 {!loading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-12 text-center text-neutral-500">
-                      {searchTerm ? 'Tidak ada group yang cocok dengan pencarian' : 'Belum ada data group'}
+                      {searchTerm ? 'Tidak ada grup yang cocok dengan pencarian' : 'Belum ada data grup'}
                     </td>
                   </tr>
                 )}
@@ -304,7 +301,7 @@ const GroupsPage: React.FC = () => {
               <span className="font-medium text-neutral-900">
                 {Math.min(currentPage * parseInt(entriesPerPage), filtered.length)}
               </span>{' '}
-              dari <span className="font-medium text-neutral-900">{filtered.length}</span> group
+              dari <span className="font-medium text-neutral-900">{filtered.length}</span> grup
             </p>
             <div className="flex items-center bg-white border border-neutral-200 rounded-lg overflow-hidden">
               <button
@@ -362,9 +359,9 @@ const GroupsPage: React.FC = () => {
           </div>
           <h3 className="text-xl font-bold text-neutral-900 mb-2">Apakah Anda Yakin?</h3>
           <p className="text-neutral-500 text-sm mb-6">
-            {confirmDialog.ids.length > 1
-              ? `${confirmDialog.ids.length} group akan dihapus.`
-              : `Group "${confirmDialog.name}" akan dihapus dan user yang terkait kehilangan hak aksesnya.`}
+              {confirmDialog.ids.length > 1
+                ? `${confirmDialog.ids.length} grup akan dihapus.`
+                : `Grup "${confirmDialog.name}" akan dihapus dan user yang terkait kehilangan hak aksesnya.`}
           </p>
           <div className="flex items-center gap-3 w-full">
             <Button

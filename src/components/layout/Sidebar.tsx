@@ -8,14 +8,17 @@ import {
   Gear,
   CaretDown,
   Buildings,
+  Storefront,
   ChartBar,
   CalendarCheck,
   ShieldCheck,
   ChalkboardTeacher,
   UserGear,
   UsersThree,
+  UsersFour,
   CaretRight,
-  BookBookmark
+  BookBookmark,
+  Receipt
 } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
@@ -67,6 +70,8 @@ const Sidebar: React.FC = () => {
                   { type: 'link', to: '/admin/teachers', icon: ChalkboardTeacher, label: 'Guru' },
                   { type: 'link', to: '/admin/parents', icon: UsersThree, label: 'Orang Tua' },
                   { type: 'link', to: '/admin/staff', icon: UserGear, label: 'Staff' },
+                  { type: 'link', to: '/admin/auth/users', icon: Storefront, label: 'School Tenant' },
+                  { type: 'link', to: '/admin/auth/groups', icon: UsersFour, label: 'Grup' },
                 ]
               },
               {
@@ -81,11 +86,12 @@ const Sidebar: React.FC = () => {
               },
               {
                 type: 'menu',
-                label: 'Autentikasi & Otorisasi',
-                icon: ShieldCheck,
+                label: 'Subscriptions',
+                icon: Receipt,
                 children: [
-                  { type: 'link', to: '/admin/auth/users', label: 'User' },
-                  { type: 'link', to: '/admin/auth/groups', label: 'Group' },
+                  { type: 'link', to: '/admin/subscriptions/plans', label: 'Paket Langganan' },
+                  { type: 'link', to: '/admin/subscriptions/active', label: 'Langganan Aktif' },
+                  { type: 'link', to: '/admin/subscriptions/invoices', label: 'Riwayat Tagihan' },
                 ]
               }
             ]

@@ -57,7 +57,7 @@ const ModalGroup: React.FC<ModalGroupProps> = ({
 
   const handleSave = () => {
     if (!name.trim()) {
-      setError('Nama group wajib diisi.');
+      setError('Nama grup wajib diisi.');
       return;
     }
     onSave({
@@ -72,14 +72,14 @@ const ModalGroup: React.FC<ModalGroupProps> = ({
     <Modal
       isOpen
       onClose={onClose}
-      title={mode === 'create' ? 'Tambah Group' : 'Edit Group'}
+      title={mode === 'create' ? 'Tambah Grup' : 'Edit Grup'}
       size="lg"
-      subtitle="Group menentukan hak akses user terhadap menu sistem"
+      subtitle="Grup menentukan hak akses user terhadap menu sistem"
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-            label="Nama Group *"
+            label="Nama Grup *"
             placeholder="cth: Supervisor Akademik"
             value={name}
             error={error}
